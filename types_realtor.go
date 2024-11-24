@@ -1,6 +1,9 @@
 package main
 
-import "time"
+import (
+	"encoding/json"
+	"time"
+)
 
 type SearchRequestParams struct {
 	Offset                  int         `json:"offset"`
@@ -47,10 +50,9 @@ type Agent struct {
 	Title      string `json:"title"`
 	Slogan     string `json:"slogan"`
 
-	Email     string           `json:"email"`
-	Phones    []Phone          `json:"phones"`
-	PhoneList map[string]Phone `json:"phone_list"`
-	Address   Address          `json:"address"`
+	Email   string  `json:"email"`
+	Phones  []Phone `json:"phones"`
+	Address Address `json:"address"`
 
 	Photo           Photo `json:"photo"`
 	BackgroundPhoto Photo `json:"background_photo"`
@@ -90,7 +92,7 @@ type Agent struct {
 	IsRealtor    bool          `json:"is_realtor"`
 	LastUpdated  string        `json:"last_updated"`
 	FirstMonth   int           `json:"first_month"`
-	FirstYear    int           `json:"first_year"`
+	FirstYear    json.Number   `json:"first_year"`
 
 	SocialMedias map[string]SocialMedia `json:"social_media"`
 	Video        string                 `json:"video"`
@@ -195,12 +197,13 @@ type Phone struct {
 }
 
 type Office struct {
-	Name         string        `json:"name"`
-	Address      Address       `json:"address"`
-	Phones       []Phone       `json:"phones"`
-	Photo        Photo         `json:"photo"`
-	Website      string        `json:"website"`
-	FeedLicenses []FeedLicense `json:"feed_licenses"`
+	Name         string           `json:"name"`
+	Address      Address          `json:"address"`
+	Phones       []Phone          `json:"phones"`
+	PhoneList    map[string]Phone `json:"phone_list"`
+	Photo        Photo            `json:"photo"`
+	Website      string           `json:"website"`
+	FeedLicenses []FeedLicense    `json:"feed_licenses"`
 }
 
 type SocialMedia struct {
