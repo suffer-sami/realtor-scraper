@@ -78,7 +78,11 @@ func normalizeURL(rawURL string) (string, error) {
 	// e.g. https://twitter.com/http://twitter.com/username, http://www.facebook.com/http://facebook.com/username etc
 
 	if strings.Contains(parsedURL.Path, strings.TrimPrefix(parsedURL.Host, "www.")) || strings.Contains(parsedURL.Path, ".") {
-		parsedURL.Path = strings.TrimPrefix(parsedURL.Path, "/")
+		parsedPathURL, err := url.Parse(strings.TrimPrefix(parsedURL.Path, "/"))
+		if err != nil {
+			return "", err
+		}
+		parsedURL.Path = parsedPathURL.Path
 	}
 
 	return purell.NormalizeURL(parsedURL, purell.FlagsUsuallySafeGreedy), nil
