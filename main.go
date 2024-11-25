@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -26,4 +27,10 @@ func main() {
 		jwtSecret: jwtSecret,
 		client:    client,
 	}
+	totalResults, err := cfg.getTotalResults()
+	if err != nil {
+		fmt.Print(err)
+		return
+	}
+	fmt.Println(totalResults)
 }
