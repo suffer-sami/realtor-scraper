@@ -21,16 +21,14 @@ func main() {
 		log.Fatal("JWT_SECRET must be set")
 	}
 
-	client := &http.Client{}
-
 	cfg := &Config{
 		jwtSecret: jwtSecret,
-		client:    client,
+		client:    &http.Client{Timeout: defaultRequestTimeout},
 	}
+
 	totalResults, err := cfg.getTotalResults()
 	if err != nil {
-		fmt.Print(err)
-		return
+		log.Fatal(err)
 	}
 	fmt.Println(totalResults)
 }
