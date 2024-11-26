@@ -12,10 +12,12 @@ import (
 )
 
 const (
-	baseUrl     = "https://realtor.com"
-	apiEndpoint = baseUrl + "/realestateagents/api/v3/search"
-	userAgent   = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
-	tokenTTL    = 1 * time.Minute
+	baseUrl               = "https://realtor.com"
+	apiEndpoint           = baseUrl + "/realestateagents/api/v3/search"
+	userAgent             = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+	defaultResultsPerPage = 20
+	defaultRequestTimeout = 30 * time.Second
+	tokenTTL              = 1 * time.Minute
 )
 
 // getRequestParams constructs the search url parameters.
@@ -100,9 +102,10 @@ func buildQueryParams(payload SearchRequestParams) (url.Values, error) {
 // setHeaders sets headers for the HTTP request.
 func setHeaders(req *http.Request, token string) {
 	req.Header.Set("Accept", "application/json, text/plain, */*")
+	req.Header.Set("Content-type", "application/json")
+	req.Header.Set("Origin", baseUrl)
 	req.Header.Set("Cache-Control", "no-cache")
 	req.Header.Set("Pragma", "no-cache")
-	req.Header.Set("Content-type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+token)
 	req.Header.Set("User-Agent", userAgent)
 }
@@ -120,16 +123,11 @@ func generateBearerToken(secret string) (string, error) {
 
 // getTotalResults retrieves the total number of matching rows.
 func (cfg *Config) getTotalResults() (int, error) {
-	payload := getRequestParams(0, 20)
+	payload := getRequestParams(0, 0)
 
 	response, err := cfg.getSearchResults(payload)
 	if err != nil {
 		return 0, err
-	}
-
-	for i := range response.Agents {
-		agent := &response.Agents[i]
-		normalizeAgent(agent)
 	}
 
 	return response.MatchingRows, nil
