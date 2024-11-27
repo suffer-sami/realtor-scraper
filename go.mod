@@ -7,9 +7,15 @@ require (
 	github.com/goccy/go-json v0.10.3
 	github.com/golang-jwt/jwt/v4 v4.5.1
 	github.com/joho/godotenv v1.5.1
+	github.com/tursodatabase/go-libsql v0.0.0-20241113154718-293fe7f21b08
 )
 
-require google.golang.org/protobuf v1.34.1 // indirect
+require (
+	github.com/antlr4-go/antlr/v4 v4.13.0 // indirect
+	github.com/libsql/sqlite-antlr4-parser v0.0.0-20240327125255-dbf53b6cbf06 // indirect
+	golang.org/x/exp v0.0.0-20240525044651-4c93da0ed11d // indirect
+	google.golang.org/protobuf v1.34.1 // indirect
+)
 
 require (
 	github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578 // indirect
