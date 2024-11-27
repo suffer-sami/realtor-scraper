@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/PuerkitoBio/purell"
-	"github.com/goware/emailx"
 	"github.com/nyaruka/phonenumbers"
 )
 
@@ -46,10 +45,7 @@ func normalizeEmail(email string) string {
 	if email == "" {
 		return ""
 	}
-	if err := emailx.Validate(email); err == nil {
-		return email
-	}
-	return email
+	return strings.ToLower(strings.TrimSpace(email))
 }
 
 // normalizePhoneList normalizes all phone numbers in a list.
