@@ -1,11 +1,13 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/joho/godotenv"
 	"github.com/suffer-sami/realtor-scraper/internal/database"
@@ -73,6 +75,8 @@ func main() {
 		log.Fatal(err)
 	}
 
+	count := 0
+
 	for i := range allRequests {
 		request := &allRequests[i]
 		if request.processed {
@@ -86,9 +90,38 @@ func main() {
 		}
 		request.processed = true
 
-		for i := range agents {
-			fmt.Printf("%d. Agent: %s\n", i+1, agents[i].FullName)
+		for i, agent := range agents {
+			fmt.Printf("%d. Agent: %s\n", i+1, agent.FullName)
+			firstYear, _ := agent.FirstYear.Int64()
+			dbAgent := database.CreateAgentParams{
+				ID:                   agent.ID,
+				FirstName:            toNullString(agent.FirstName),
+				LastName:             toNullString(agent.LastName),
+				NickName:             toNullString(agent.NickName),
+				PersonName:           toNullString(agent.PersonName),
+				Title:                toNullString(agent.Title),
+				Slogan:               toNullString(agent.Slogan),
+				Email:                toNullString(agent.Email),
+				AgentRating:          toNullInt(agent.AgentRating),
+				Description:          toNullString(agent.Description),
+				RecommendationsCount: toNullInt(agent.RecommendationsCount),
+				ReviewCount:          toNullInt(agent.ReviewCount),
+				LastUpdated:          toStrNullTime(agent.LastUpdated, time.RFC1123),
+				FirstMonth:           toNullInt(agent.FirstMonth),
+				FirstYear:            toNullInt64(firstYear),
+				Video:                toNullString(agent.Video),
+				WebUrl:               toNullString(agent.WebURL),
+				Href:                 toNullString(agent.Href),
+			}
+			_, err = cfg.db.CreateAgent(context.Background(), dbAgent)
+			if err != nil {
+				log.Fatal(err)
+			}
 		}
-		break
+
+		count++
+		if count >= 5 {
+			break
+		}
 	}
 }
