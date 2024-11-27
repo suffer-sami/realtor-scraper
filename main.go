@@ -68,12 +68,27 @@ func main() {
 	}
 	fmt.Printf("Total Agents: %d\n", totalResults)
 
-	agents, err := cfg.getAgents(0, defaultResultsPerPage)
+	allRequests, err := cfg.getRequests(totalResults)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	for i := range agents {
-		fmt.Printf("%d. Agent: %s\n", i+1, agents[i].FullName)
+	for i := range allRequests {
+		request := &allRequests[i]
+		if request.processed {
+			continue
+		}
+
+		log.Printf("Getting Agents (Offset: %d, ResultsPerPage: %d)...\n", request.offset, request.resultsPerPage)
+		agents, err := cfg.getAgents(request.offset, request.resultsPerPage)
+		if err != nil {
+			log.Fatal(err)
+		}
+		request.processed = true
+
+		for i := range agents {
+			fmt.Printf("%d. Agent: %s\n", i+1, agents[i].FullName)
+		}
+		break
 	}
 }

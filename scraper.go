@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"math"
 	"net/http"
 	"net/url"
+	"sort"
 	"time"
 
 	"github.com/goccy/go-json"
@@ -21,6 +23,12 @@ const (
 	defaultRequestTimeout = 30 * time.Second
 	tokenTTL              = 1 * time.Minute
 )
+
+type Request struct {
+	resultsPerPage int
+	offset         int
+	processed      bool
+}
 
 // getRequestParams constructs the search url parameters.
 func getRequestParams(offset, resultsPerPage int) SearchRequestParams {
@@ -135,7 +143,7 @@ func (cfg *Config) getTotalResults() (int, error) {
 	return response.MatchingRows, nil
 }
 
-// getAgents retrieves list of agents matching the search criteria.
+// getAgents retrieves list of normalized agents matching the search criteria.
 func (cfg *Config) getAgents(offset, resultsPerPage int) ([]Agent, error) {
 	payload := getRequestParams(offset, resultsPerPage)
 
@@ -158,4 +166,67 @@ func (cfg *Config) getAgents(offset, resultsPerPage int) ([]Agent, error) {
 	}
 
 	return response.Agents, nil
+}
+
+// getRequests calculates all requests needed to fetch `totalResults`, marking previously processed requests as true.
+func (cfg *Config) getRequests(totalResults int) ([]Request, error) {
+	totalPages := int(math.Ceil(float64(totalResults) / float64(defaultResultsPerPage)))
+	requestMap := initializeRequestMap(totalPages)
+
+	prevRequests, err := cfg.fetchPreviousRequests()
+	if err != nil {
+		return nil, err
+	}
+
+	markProcessedRequests(requestMap, prevRequests)
+	return sortRequests(requestMap), nil
+}
+
+// initializeRequestMap creates an initial map of all potential requests.
+func initializeRequestMap(totalPages int) map[int]Request {
+
+	requestMap := make(map[int]Request, totalPages)
+	for page := 0; page < totalPages; page++ {
+		offset := page * defaultResultsPerPage
+		requestMap[offset] = Request{
+			resultsPerPage: defaultResultsPerPage,
+			offset:         offset,
+			processed:      false,
+		}
+	}
+	return requestMap
+}
+
+// fetchPreviousRequests retrieves already processed requests from db.
+func (cfg *Config) fetchPreviousRequests() ([]database.GetRequestsRow, error) {
+	previousRequests, err := cfg.db.GetRequests(context.Background())
+	if err != nil {
+		return nil, fmt.Errorf("failed to get requests from db: %w", err)
+	}
+	return previousRequests, nil
+}
+
+// markProcessedRequests updates the request map with processed request data.
+func markProcessedRequests(requestMap map[int]Request, prevRequests []database.GetRequestsRow) {
+	for _, prevReq := range prevRequests {
+		offset := int(prevReq.Offset)
+		requestMap[offset] = Request{
+			resultsPerPage: int(prevReq.ResultsPerPage),
+			offset:         offset,
+			processed:      true,
+		}
+	}
+}
+
+// sortRequests converts the request map into a sorted slice of Request objects.
+func sortRequests(requestMap map[int]Request) []Request {
+	sortedKeys := make([]Request, 0, len(requestMap))
+	for _, req := range requestMap {
+		sortedKeys = append(sortedKeys, req)
+	}
+
+	sort.Slice(sortedKeys, func(i, j int) bool {
+		return sortedKeys[i].offset < sortedKeys[j].offset
+	})
+	return sortedKeys
 }
