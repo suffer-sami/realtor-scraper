@@ -92,7 +92,6 @@ func main() {
 
 		for i, agent := range agents {
 			fmt.Printf("%d. Agent: %s\n", i+1, agent.FullName)
-			firstYear, _ := agent.FirstYear.Int64()
 			dbAgent := database.CreateAgentParams{
 				ID:                   agent.ID,
 				FirstName:            toNullString(agent.FirstName),
@@ -106,16 +105,17 @@ func main() {
 				Description:          toNullString(agent.Description),
 				RecommendationsCount: toNullInt(agent.RecommendationsCount),
 				ReviewCount:          toNullInt(agent.ReviewCount),
-				LastUpdated:          toStrNullTime(agent.LastUpdated, time.RFC1123),
-				FirstMonth:           toNullInt(agent.FirstMonth),
-				FirstYear:            toNullInt64(firstYear),
+				LastUpdated:          strToNullTime(agent.LastUpdated, time.RFC1123),
+				FirstMonth:           toNullInt(int(agent.FirstMonth)),
+				FirstYear:            toNullInt(int(agent.AgentRating)),
 				Video:                toNullString(agent.Video),
 				WebUrl:               toNullString(agent.WebURL),
 				Href:                 toNullString(agent.Href),
 			}
 			_, err = cfg.db.CreateAgent(context.Background(), dbAgent)
 			if err != nil {
-				log.Fatal(err)
+				log.Print(err)
+				continue
 			}
 		}
 

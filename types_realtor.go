@@ -1,9 +1,13 @@
 package main
 
 import (
-	"encoding/json"
+	"regexp"
+	"strconv"
+	"strings"
 	"time"
 )
+
+var digitRegex = regexp.MustCompile(`^\d+$`)
 
 type SearchRequestParams struct {
 	Offset                  int         `json:"offset"`
@@ -91,8 +95,8 @@ type Agent struct {
 	FeedLicenses []FeedLicense `json:"feed_licenses"`
 	IsRealtor    bool          `json:"is_realtor"`
 	LastUpdated  string        `json:"last_updated"`
-	FirstMonth   int           `json:"first_month"`
-	FirstYear    json.Number   `json:"first_year"`
+	FirstMonth   NumericType   `json:"first_month"`
+	FirstYear    NumericType   `json:"first_year"`
 
 	SocialMedias map[string]SocialMedia `json:"social_media"`
 	Video        string                 `json:"video"`
@@ -103,6 +107,23 @@ type Agent struct {
 
 	Settings Settings `json:"settings"`
 	Href     string   `json:"href"`
+}
+
+type NumericType int
+
+func (n *NumericType) UnmarshalJSON(b []byte) error {
+	str := strings.Trim(string(b), `"`)
+
+	if digitRegex.MatchString(str) {
+		num, err := strconv.Atoi(str)
+		if err != nil {
+			return err
+		}
+		*n = NumericType(num)
+	} else {
+		*n = 0
+	}
+	return nil
 }
 
 type Address struct {
