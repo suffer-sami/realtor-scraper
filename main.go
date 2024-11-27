@@ -30,5 +30,14 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println(totalResults)
+	fmt.Printf("Total Agents: %d\n", totalResults)
+
+	agents, err := cfg.getAgents(0, defaultResultsPerPage)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for i := range agents {
+		fmt.Printf("%d. Agent: %s\n", i+1, agents[i].FullName)
+	}
 }

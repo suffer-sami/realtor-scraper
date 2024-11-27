@@ -132,3 +132,19 @@ func (cfg *Config) getTotalResults() (int, error) {
 
 	return response.MatchingRows, nil
 }
+
+// getAgents retrieves list of agents matching the search criteria.
+func (cfg *Config) getAgents(offset, limit int) ([]Agent, error) {
+	payload := getRequestParams(offset, limit)
+
+	response, err := cfg.getSearchResults(payload)
+	if err != nil {
+		return nil, err
+	}
+
+	for i := range response.Agents {
+		normalizeAgent(&response.Agents[i])
+	}
+
+	return response.Agents, nil
+}
