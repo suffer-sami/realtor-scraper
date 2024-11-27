@@ -191,9 +191,10 @@ type Member struct {
 }
 
 type Phone struct {
-	Ext    string `json:"ext"`
-	Number string `json:"number"`
-	Type   string `json:"type"`
+	Ext     string `json:"ext"`
+	Number  string `json:"number"`
+	Type    string `json:"type"`
+	IsValid bool   `json:"is_valid"`
 }
 
 type Office struct {
