@@ -5,8 +5,32 @@
 package database
 
 import (
+	"database/sql"
 	"time"
 )
+
+type Agent struct {
+	ID                   string
+	CreatedAt            time.Time
+	UpdatedAt            time.Time
+	FirstName            sql.NullString
+	LastName             sql.NullString
+	NickName             sql.NullString
+	PersonName           sql.NullString
+	Title                sql.NullString
+	Slogan               sql.NullString
+	Email                sql.NullString
+	AgentRating          sql.NullInt64
+	Description          sql.NullString
+	RecommendationsCount sql.NullInt64
+	ReviewCount          sql.NullInt64
+	LastUpdated          sql.NullTime
+	FirstMonth           sql.NullInt64
+	FirstYear            sql.NullInt64
+	Video                sql.NullString
+	WebUrl               sql.NullString
+	Href                 sql.NullString
+}
 
 type Request struct {
 	ID             int64
