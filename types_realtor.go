@@ -198,13 +198,19 @@ type Phone struct {
 }
 
 type Office struct {
-	Name         string           `json:"name"`
-	Address      Address          `json:"address"`
-	Phones       []Phone          `json:"phones"`
-	PhoneList    map[string]Phone `json:"phone_list"`
-	Photo        Photo            `json:"photo"`
-	Website      string           `json:"website"`
-	FeedLicenses []FeedLicense    `json:"feed_licenses"`
+	Name          string           `json:"name"`
+	Address       Address          `json:"address"`
+	Phones        []Phone          `json:"phones"`
+	PhoneList     map[string]Phone `json:"phone_list"`
+	Photo         Photo            `json:"photo"`
+	Website       string           `json:"website"`
+	FeedLicenses  []FeedLicense    `json:"feed_licenses"`
+	Email         string           `json:"email"`
+	Slogan        string           `json:"slogan"`
+	Video         string           `json:"video"`
+	NrdsID        string           `json:"nrds_id"`
+	FulfillmentID int              `json:"fulfillment_id"`
+	Licenses      []FeedLicense    `json:"licenses"`
 }
 
 type SocialMedia struct {
