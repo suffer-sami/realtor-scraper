@@ -58,6 +58,9 @@ func normalizePhoneList(phones []Phone, regionCode string) {
 // normalizePhone normalizes a phone number to the international format.
 func normalizePhone(phone *Phone, regionCode string) {
 	phone.IsValid = false
+	if phone.Number == "" {
+		return
+	}
 	parsedNumber, err := phonenumbers.Parse(phone.Number, regionCode)
 	if err != nil {
 		log.Printf("Failed to parse phone number '%s': %v", phone.Number, err)
