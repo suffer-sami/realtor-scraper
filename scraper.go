@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"net/http"
@@ -9,6 +10,7 @@ import (
 
 	"github.com/goccy/go-json"
 	"github.com/golang-jwt/jwt/v4"
+	"github.com/suffer-sami/realtor-scraper/internal/database"
 )
 
 const (
@@ -21,10 +23,10 @@ const (
 )
 
 // getRequestParams constructs the search url parameters.
-func getRequestParams(offset, limit int) SearchRequestParams {
+func getRequestParams(offset, resultsPerPage int) SearchRequestParams {
 	return SearchRequestParams{
 		Offset:              offset,
-		Limit:               limit,
+		Limit:               resultsPerPage,
 		MarketingAreaCities: "_",
 		Types:               "agent",
 		Sort:                "agent_rating_high",
@@ -134,8 +136,8 @@ func (cfg *Config) getTotalResults() (int, error) {
 }
 
 // getAgents retrieves list of agents matching the search criteria.
-func (cfg *Config) getAgents(offset, limit int) ([]Agent, error) {
-	payload := getRequestParams(offset, limit)
+func (cfg *Config) getAgents(offset, resultsPerPage int) ([]Agent, error) {
+	payload := getRequestParams(offset, resultsPerPage)
 
 	response, err := cfg.getSearchResults(payload)
 	if err != nil {
@@ -144,6 +146,15 @@ func (cfg *Config) getAgents(offset, limit int) ([]Agent, error) {
 
 	for i := range response.Agents {
 		normalizeAgent(&response.Agents[i])
+	}
+
+	_, err = cfg.db.CreateRequest(context.Background(), database.CreateRequestParams{
+		Offset:         int64(offset),
+		ResultsPerPage: int64(resultsPerPage),
+	})
+
+	if err != nil {
+		return nil, err
 	}
 
 	return response.Agents, nil
