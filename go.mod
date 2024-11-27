@@ -6,7 +6,6 @@ require (
 	github.com/PuerkitoBio/purell v1.1.1
 	github.com/goccy/go-json v0.10.3
 	github.com/golang-jwt/jwt/v4 v4.5.1
-	github.com/goware/emailx v0.2.0
 	github.com/joho/godotenv v1.5.1
 	github.com/tursodatabase/go-libsql v0.0.0-20241113154718-293fe7f21b08
 )
