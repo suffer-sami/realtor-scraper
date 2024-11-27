@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/PuerkitoBio/purell"
+	"github.com/goware/emailx"
 	"github.com/nyaruka/phonenumbers"
 )
 
@@ -17,6 +18,9 @@ const (
 func normalizeAgent(agent *Agent) {
 	agent.Href = tryNormalizeURL(agent.Href)
 	agent.Office.Website = tryNormalizeURL(agent.Office.Website)
+
+	agent.Email = normalizeEmail(agent.Email)
+	agent.Office.Email = normalizeEmail(agent.Office.Email)
 
 	agentCountry := getCountryCode(agent.Address.Country, defaultCountryCode)
 	officeCountry := getCountryCode(agent.Office.Address.Country, agentCountry)
@@ -35,6 +39,17 @@ func normalizeAgent(agent *Agent) {
 			Type: socialMedia.Type,
 		}
 	}
+}
+
+// normalizeEmail cleans and normalizes email.
+func normalizeEmail(email string) string {
+	if email == "" {
+		return ""
+	}
+	if err := emailx.Validate(email); err == nil {
+		return email
+	}
+	return email
 }
 
 // normalizePhoneList normalizes all phone numbers in a list.
