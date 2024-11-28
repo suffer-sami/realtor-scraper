@@ -47,6 +47,11 @@ type AgentUserLanguage struct {
 	LanguageID sql.NullInt64
 }
 
+type AgentZip struct {
+	AgentID sql.NullString
+	ZipID   sql.NullInt64
+}
+
 type FeedLicense struct {
 	ID            int64
 	Country       sql.NullString
@@ -101,4 +106,9 @@ type SocialMedia struct {
 	Type    sql.NullString
 	Href    sql.NullString
 	AgentID sql.NullString
+}
+
+type Zip struct {
+	ID      int64
+	ZipCode sql.NullString
 }
