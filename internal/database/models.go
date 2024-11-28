@@ -32,6 +32,15 @@ type Agent struct {
 	Href                 sql.NullString
 }
 
+type ListingsDatum struct {
+	ID              int64
+	Count           sql.NullInt64
+	Min             sql.NullInt64
+	Max             sql.NullInt64
+	LastListingDate sql.NullTime
+	AgentID         sql.NullString
+}
+
 type Request struct {
 	ID             int64
 	CreatedAt      time.Time
