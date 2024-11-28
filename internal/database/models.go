@@ -57,3 +57,10 @@ type SalesDatum struct {
 	LastSoldDate sql.NullTime
 	AgentID      sql.NullString
 }
+
+type SocialMedia struct {
+	ID      int64
+	Type    sql.NullString
+	Href    sql.NullString
+	AgentID sql.NullString
+}

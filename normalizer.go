@@ -35,7 +35,7 @@ func normalizeAgent(agent *Agent) {
 	for k, socialMedia := range agent.SocialMedias {
 		agent.SocialMedias[k] = SocialMedia{
 			Href: tryNormalizeURL(socialMedia.Href),
-			Type: socialMedia.Type,
+			Type: strings.ToLower(socialMedia.Type),
 		}
 	}
 }
