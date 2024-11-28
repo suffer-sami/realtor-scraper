@@ -32,6 +32,14 @@ type Agent struct {
 	Href                 sql.NullString
 }
 
+type FeedLicense struct {
+	ID            int64
+	StateCode     sql.NullString
+	LicenseNumber sql.NullString
+	Country       sql.NullString
+	AgentID       sql.NullString
+}
+
 type ListingsDatum struct {
 	ID              int64
 	Count           sql.NullInt64
