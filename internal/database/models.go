@@ -32,9 +32,19 @@ type Agent struct {
 	Href                 sql.NullString
 }
 
+type AgentLanguage struct {
+	AgentID    sql.NullString
+	LanguageID sql.NullInt64
+}
+
 type AgentMultipleListingService struct {
 	AgentID                  sql.NullString
 	MultipleListingServiceID sql.NullInt64
+}
+
+type AgentUserLanguage struct {
+	AgentID    sql.NullString
+	LanguageID sql.NullInt64
 }
 
 type FeedLicense struct {
@@ -43,6 +53,11 @@ type FeedLicense struct {
 	LicenseNumber sql.NullString
 	StateCode     sql.NullString
 	AgentID       sql.NullString
+}
+
+type Language struct {
+	ID   int64
+	Name sql.NullString
 }
 
 type ListingsDatum struct {
