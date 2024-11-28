@@ -37,9 +37,19 @@ type AgentLanguage struct {
 	LanguageID sql.NullInt64
 }
 
+type AgentMarketingArea struct {
+	AgentID sql.NullString
+	AreaID  sql.NullInt64
+}
+
 type AgentMultipleListingService struct {
 	AgentID                  sql.NullString
 	MultipleListingServiceID sql.NullInt64
+}
+
+type AgentServedArea struct {
+	AgentID sql.NullString
+	AreaID  sql.NullInt64
 }
 
 type AgentUserLanguage struct {
@@ -50,6 +60,12 @@ type AgentUserLanguage struct {
 type AgentZip struct {
 	AgentID sql.NullString
 	ZipID   sql.NullInt64
+}
+
+type Area struct {
+	ID        int64
+	Name      sql.NullString
+	StateCode sql.NullString
 }
 
 type FeedLicense struct {
