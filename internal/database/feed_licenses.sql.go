@@ -18,7 +18,7 @@ VALUES (
     ?,
     ?
 )
-RETURNING id, state_code, license_number, country, agent_id
+RETURNING id, country, license_number, state_code, agent_id
 `
 
 type CreateFeedLicenseParams struct {
@@ -38,9 +38,9 @@ func (q *Queries) CreateFeedLicense(ctx context.Context, arg CreateFeedLicensePa
 	var i FeedLicense
 	err := row.Scan(
 		&i.ID,
-		&i.StateCode,
-		&i.LicenseNumber,
 		&i.Country,
+		&i.LicenseNumber,
+		&i.StateCode,
 		&i.AgentID,
 	)
 	return i, err

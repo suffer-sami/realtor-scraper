@@ -32,11 +32,16 @@ type Agent struct {
 	Href                 sql.NullString
 }
 
+type AgentMultipleListingService struct {
+	AgentID                  sql.NullString
+	MultipleListingServiceID sql.NullInt64
+}
+
 type FeedLicense struct {
 	ID            int64
-	StateCode     sql.NullString
-	LicenseNumber sql.NullString
 	Country       sql.NullString
+	LicenseNumber sql.NullString
+	StateCode     sql.NullString
 	AgentID       sql.NullString
 }
 
@@ -47,6 +52,16 @@ type ListingsDatum struct {
 	Max             sql.NullInt64
 	LastListingDate sql.NullTime
 	AgentID         sql.NullString
+}
+
+type MultipleListingService struct {
+	ID               int64
+	Abbreviation     sql.NullString
+	InactivationDate sql.NullTime
+	LicenseNumber    sql.NullString
+	MemberID         sql.NullString
+	Type             sql.NullString
+	IsPrimary        sql.NullBool
 }
 
 type Request struct {
