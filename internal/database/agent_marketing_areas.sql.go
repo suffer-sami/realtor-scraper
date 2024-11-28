@@ -16,6 +16,7 @@ VALUES (
     ?,
     ?
 )
+ON CONFLICT(agent_id, area_id) DO NOTHING
 `
 
 type CreateAgentMarketingAreaParams struct {

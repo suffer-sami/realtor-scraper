@@ -16,6 +16,7 @@ VALUES (
     ?,
     ?
 )
+ON CONFLICT(agent_id, multiple_listing_service_id) DO NOTHING
 `
 
 type CreateAgentMultipleListingServiceParams struct {

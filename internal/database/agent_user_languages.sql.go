@@ -16,6 +16,7 @@ VALUES (
     ?,
     ?
 )
+ON CONFLICT(agent_id, language_id) DO NOTHING
 `
 
 type CreateAgentUserLanguageParams struct {

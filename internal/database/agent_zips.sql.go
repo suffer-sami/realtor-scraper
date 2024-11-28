@@ -16,6 +16,7 @@ VALUES (
     ?,
     ?
 )
+ON CONFLICT(agent_id, zip_id) DO NOTHING
 `
 
 type CreateAgentZipParams struct {

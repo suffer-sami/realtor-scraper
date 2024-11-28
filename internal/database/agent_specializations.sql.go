@@ -16,6 +16,7 @@ VALUES (
     ?,
     ?
 )
+ON CONFLICT(agent_id, specialization_id) DO NOTHING
 `
 
 type CreateAgentSpecializationParams struct {
