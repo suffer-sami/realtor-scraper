@@ -32,6 +32,11 @@ type Agent struct {
 	Href                 sql.NullString
 }
 
+type AgentDesignation struct {
+	AgentID       sql.NullString
+	DesignationID sql.NullInt64
+}
+
 type AgentLanguage struct {
 	AgentID    sql.NullString
 	LanguageID sql.NullInt64
@@ -52,6 +57,11 @@ type AgentServedArea struct {
 	AreaID  sql.NullInt64
 }
 
+type AgentSpecialization struct {
+	AgentID          sql.NullString
+	SpecializationID sql.NullInt64
+}
+
 type AgentUserLanguage struct {
 	AgentID    sql.NullString
 	LanguageID sql.NullInt64
@@ -66,6 +76,11 @@ type Area struct {
 	ID        int64
 	Name      sql.NullString
 	StateCode sql.NullString
+}
+
+type Designation struct {
+	ID   int64
+	Name sql.NullString
 }
 
 type FeedLicense struct {
@@ -122,6 +137,11 @@ type SocialMedia struct {
 	Type    sql.NullString
 	Href    sql.NullString
 	AgentID sql.NullString
+}
+
+type Specialization struct {
+	ID   int64
+	Name sql.NullString
 }
 
 type Zip struct {
