@@ -39,3 +39,12 @@ type Request struct {
 	Offset         int64
 	ResultsPerPage int64
 }
+
+type SalesDatum struct {
+	ID           int64
+	Count        sql.NullInt64
+	Min          sql.NullInt64
+	Max          sql.NullInt64
+	LastSoldDate sql.NullTime
+	AgentID      sql.NullString
+}
