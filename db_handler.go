@@ -63,6 +63,7 @@ func (cfg *config) storeAgent(agent Agent) error {
 		}
 		cfg.logger.Infof("Agent: %s", dbAgent.PersonName.String)
 
+		cfg.logger.Debugf("- sales data: %s", agent.RecentlySold.LastSoldDate)
 		qtx.CreateSalesData(ctx, database.CreateSalesDataParams{
 			Count:        toNullInt(agent.RecentlySold.Count),
 			Min:          toNullInt(agent.RecentlySold.Min),
@@ -71,6 +72,7 @@ func (cfg *config) storeAgent(agent Agent) error {
 			AgentID:      toNullString(dbAgent.ID),
 		})
 
+		cfg.logger.Debugf("- listing data: %s", agent.RecentlySold.LastSoldDate)
 		qtx.CreateListingsData(ctx, database.CreateListingsDataParams{
 			Count:           toNullInt(agent.ForSalePrice.Count),
 			Min:             toNullInt(agent.ForSalePrice.Min),
@@ -79,7 +81,9 @@ func (cfg *config) storeAgent(agent Agent) error {
 			AgentID:         toNullString(dbAgent.ID),
 		})
 
+		cfg.logger.Debugf("- social medias:")
 		for _, socialMedia := range agent.SocialMedias {
+			cfg.logger.Debugf("	* %s", socialMedia.Type)
 			qtx.CreateSocialMedia(ctx, database.CreateSocialMediaParams{
 				Type:    toNullString(socialMedia.Type),
 				Href:    toNullString(socialMedia.Href),
@@ -87,6 +91,16 @@ func (cfg *config) storeAgent(agent Agent) error {
 			})
 		}
 
+		cfg.logger.Debugf("- feed licences:")
+		for _, feedLicense := range agent.FeedLicenses {
+			cfg.logger.Debugf("	* (%s, %s)", feedLicense.StateCode, feedLicense.Country)
+			qtx.CreateFeedLicense(ctx, database.CreateFeedLicenseParams{
+				Country:       toNullString(feedLicense.Country),
+				LicenseNumber: toNullString(feedLicense.LicenseNumber),
+				StateCode:     toNullString(feedLicense.StateCode),
+				AgentID:       toNullString(dbAgent.ID),
+			})
+		}
 		return nil
 	})
 }

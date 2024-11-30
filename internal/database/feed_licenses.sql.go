@@ -11,29 +11,31 @@ import (
 )
 
 const createFeedLicense = `-- name: CreateFeedLicense :one
-INSERT INTO feed_licenses (country, license_number, state_code, agent_id)
+INSERT INTO feed_licenses (agent_id, country, state_code, license_number)
 VALUES (
     ?,
     ?,
     ?,
     ?
 )
+ON CONFLICT(agent_id, country, state_code, license_number) 
+    DO NOTHING
 RETURNING id, country, license_number, state_code, agent_id
 `
 
 type CreateFeedLicenseParams struct {
-	Country       sql.NullString
-	LicenseNumber sql.NullString
-	StateCode     sql.NullString
 	AgentID       sql.NullString
+	Country       sql.NullString
+	StateCode     sql.NullString
+	LicenseNumber sql.NullString
 }
 
 func (q *Queries) CreateFeedLicense(ctx context.Context, arg CreateFeedLicenseParams) (FeedLicense, error) {
 	row := q.db.QueryRowContext(ctx, createFeedLicense,
-		arg.Country,
-		arg.LicenseNumber,
-		arg.StateCode,
 		arg.AgentID,
+		arg.Country,
+		arg.StateCode,
+		arg.LicenseNumber,
 	)
 	var i FeedLicense
 	err := row.Scan(
