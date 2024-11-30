@@ -20,7 +20,6 @@ const (
 	apiEndpoint           = baseUrl + "/realestateagents/api/v3/search"
 	userAgent             = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
 	defaultResultsPerPage = 20
-	defaultRequestTimeout = 30 * time.Second
 	tokenTTL              = 1 * time.Minute
 )
 
@@ -46,7 +45,7 @@ func getRequestParams(offset, resultsPerPage int) SearchRequestParams {
 }
 
 // getSearchResults fetches search results from the API.
-func (cfg *Config) getSearchResults(payload SearchRequestParams) (SearchRequestResponse, error) {
+func (cfg *config) getSearchResults(payload SearchRequestParams) (SearchRequestResponse, error) {
 	parsedURL, _ := url.Parse(apiEndpoint)
 	queryParams, err := buildQueryParams(payload)
 	if err != nil {
@@ -132,7 +131,7 @@ func generateBearerToken(secret string) (string, error) {
 }
 
 // getTotalResults retrieves the total number of matching rows.
-func (cfg *Config) getTotalResults() (int, error) {
+func (cfg *config) getTotalResults() (int, error) {
 	payload := getRequestParams(0, 0)
 
 	response, err := cfg.getSearchResults(payload)
@@ -144,7 +143,7 @@ func (cfg *Config) getTotalResults() (int, error) {
 }
 
 // getAgents retrieves list of normalized agents matching the search criteria.
-func (cfg *Config) getAgents(offset, resultsPerPage int) ([]Agent, error) {
+func (cfg *config) getAgents(offset, resultsPerPage int) ([]Agent, error) {
 	payload := getRequestParams(offset, resultsPerPage)
 
 	response, err := cfg.getSearchResults(payload)
@@ -156,7 +155,7 @@ func (cfg *Config) getAgents(offset, resultsPerPage int) ([]Agent, error) {
 		normalizeAgent(&response.Agents[i])
 	}
 
-	_, err = cfg.db.CreateRequest(context.Background(), database.CreateRequestParams{
+	_, err = cfg.dbQueries.CreateRequest(context.Background(), database.CreateRequestParams{
 		Offset:         int64(offset),
 		ResultsPerPage: int64(resultsPerPage),
 	})
@@ -169,7 +168,7 @@ func (cfg *Config) getAgents(offset, resultsPerPage int) ([]Agent, error) {
 }
 
 // getRequests calculates all requests needed to fetch `totalResults`, marking previously processed requests as true.
-func (cfg *Config) getRequests(totalResults int) ([]Request, error) {
+func (cfg *config) getRequests(totalResults int) ([]Request, error) {
 	totalPages := int(math.Ceil(float64(totalResults) / float64(defaultResultsPerPage)))
 	requestMap := initializeRequestMap(totalPages)
 
@@ -198,8 +197,8 @@ func initializeRequestMap(totalPages int) map[int]Request {
 }
 
 // fetchPreviousRequests retrieves already processed requests from db.
-func (cfg *Config) fetchPreviousRequests() ([]database.GetRequestsRow, error) {
-	previousRequests, err := cfg.db.GetRequests(context.Background())
+func (cfg *config) fetchPreviousRequests() ([]database.GetRequestsRow, error) {
+	previousRequests, err := cfg.dbQueries.GetRequests(context.Background())
 	if err != nil {
 		return nil, fmt.Errorf("failed to get requests from db: %w", err)
 	}
