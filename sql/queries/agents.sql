@@ -44,3 +44,6 @@ VALUES (
     ?  -- href
 )
 RETURNING *;
+
+-- name: GetAgent :one
+SELECT * FROM agents WHERE id = ?;

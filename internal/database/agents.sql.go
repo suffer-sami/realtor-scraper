@@ -125,3 +125,35 @@ func (q *Queries) CreateAgent(ctx context.Context, arg CreateAgentParams) (Agent
 	)
 	return i, err
 }
+
+const getAgent = `-- name: GetAgent :one
+SELECT id, created_at, updated_at, first_name, last_name, nick_name, person_name, title, slogan, email, agent_rating, description, recommendations_count, review_count, last_updated, first_month, first_year, video, web_url, href FROM agents WHERE id = ?
+`
+
+func (q *Queries) GetAgent(ctx context.Context, id string) (Agent, error) {
+	row := q.db.QueryRowContext(ctx, getAgent, id)
+	var i Agent
+	err := row.Scan(
+		&i.ID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.FirstName,
+		&i.LastName,
+		&i.NickName,
+		&i.PersonName,
+		&i.Title,
+		&i.Slogan,
+		&i.Email,
+		&i.AgentRating,
+		&i.Description,
+		&i.RecommendationsCount,
+		&i.ReviewCount,
+		&i.LastUpdated,
+		&i.FirstMonth,
+		&i.FirstYear,
+		&i.Video,
+		&i.WebUrl,
+		&i.Href,
+	)
+	return i, err
+}
