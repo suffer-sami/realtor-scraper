@@ -31,7 +31,7 @@ func (cfg *config) executeTransaction(ctx context.Context, txFunc func(context.C
 
 func (cfg *config) storeAgent(agent Agent) error {
 	return cfg.executeTransaction(context.Background(), func(ctx context.Context, qtx *database.Queries) error {
-		dbAgent, err := qtx.GetAgent(context.Background(), agent.ID)
+		dbAgent, err := qtx.GetAgent(ctx, agent.ID)
 		if err != nil {
 			if err != sql.ErrNoRows {
 				return err
@@ -62,6 +62,22 @@ func (cfg *config) storeAgent(agent Agent) error {
 			}
 		}
 		cfg.logger.Infof("Agent: %s", dbAgent.PersonName.String)
+
+		qtx.CreateSalesData(ctx, database.CreateSalesDataParams{
+			Count:        toNullInt(agent.RecentlySold.Count),
+			Min:          toNullInt(agent.RecentlySold.Min),
+			Max:          toNullInt(agent.RecentlySold.Max),
+			LastSoldDate: strToNullTime(agent.RecentlySold.LastSoldDate, time.DateOnly),
+			AgentID:      toNullString(dbAgent.ID),
+		})
+
+		qtx.CreateListingsData(ctx, database.CreateListingsDataParams{
+			Count:           toNullInt(agent.ForSalePrice.Count),
+			Min:             toNullInt(agent.ForSalePrice.Min),
+			Max:             toNullInt(agent.ForSalePrice.Max),
+			LastListingDate: timeToNullTime(agent.ForSalePrice.LastListingDate),
+			AgentID:         toNullString(dbAgent.ID),
+		})
 		return nil
 	})
 }

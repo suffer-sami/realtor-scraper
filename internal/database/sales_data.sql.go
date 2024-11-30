@@ -19,7 +19,13 @@ VALUES (
     ?,
     ?
 )
-RETURNING id, count, min, max, last_sold_date, agent_id
+ON CONFLICT (agent_id) 
+DO UPDATE SET
+    count = EXCLUDED.count,
+    min = EXCLUDED.min,
+    max = EXCLUDED.max,
+    last_sold_date = EXCLUDED.last_sold_date
+RETURNING id, count, min, max, agent_id, last_sold_date
 `
 
 type CreateSalesDataParams struct {
@@ -44,8 +50,8 @@ func (q *Queries) CreateSalesData(ctx context.Context, arg CreateSalesDataParams
 		&i.Count,
 		&i.Min,
 		&i.Max,
-		&i.LastSoldDate,
 		&i.AgentID,
+		&i.LastSoldDate,
 	)
 	return i, err
 }

@@ -128,8 +128,8 @@ type SalesDatum struct {
 	Count        sql.NullInt64
 	Min          sql.NullInt64
 	Max          sql.NullInt64
-	LastSoldDate sql.NullTime
 	AgentID      sql.NullString
+	LastSoldDate sql.NullTime
 }
 
 type SocialMedia struct {
