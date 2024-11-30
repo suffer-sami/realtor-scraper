@@ -5,4 +5,5 @@ VALUES (
     ?,
     ?
 )
+ON CONFLICT (agent_id, href) DO NOTHING
 RETURNING *;

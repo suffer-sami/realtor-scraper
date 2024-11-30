@@ -17,6 +17,7 @@ VALUES (
     ?,
     ?
 )
+ON CONFLICT (agent_id, href) DO NOTHING
 RETURNING id, type, href, agent_id
 `
 

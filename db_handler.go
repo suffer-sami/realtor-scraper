@@ -78,6 +78,15 @@ func (cfg *config) storeAgent(agent Agent) error {
 			LastListingDate: timeToNullTime(agent.ForSalePrice.LastListingDate),
 			AgentID:         toNullString(dbAgent.ID),
 		})
+
+		for _, socialMedia := range agent.SocialMedias {
+			qtx.CreateSocialMedia(ctx, database.CreateSocialMediaParams{
+				Type:    toNullString(socialMedia.Type),
+				Href:    toNullString(socialMedia.Href),
+				AgentID: toNullString(dbAgent.ID),
+			})
+		}
+
 		return nil
 	})
 }
