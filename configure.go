@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"log"
@@ -28,6 +29,27 @@ type config struct {
 	mu                 *sync.Mutex
 	concurrencyControl chan struct{}
 	wg                 *sync.WaitGroup
+}
+
+// Executes database queries atomically within a lock
+func (cfg *config) executeTransaction(ctx context.Context, txFunc func(context.Context, *database.Queries) error) error {
+	cfg.mu.Lock()
+	defer cfg.mu.Unlock()
+
+	tx, err := cfg.db.Begin()
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %v", err)
+	}
+	defer tx.Rollback()
+
+	qtx := cfg.dbQueries.WithTx(tx)
+
+	err = txFunc(ctx, qtx)
+
+	if err != nil {
+		return fmt.Errorf("transaction failed: %v", err)
+	}
+	return tx.Commit()
 }
 
 func configure(args []string) (*config, error) {

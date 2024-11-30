@@ -155,9 +155,12 @@ func (cfg *config) getAgents(offset, resultsPerPage int) ([]Agent, error) {
 		normalizeAgent(&response.Agents[i])
 	}
 
-	_, err = cfg.dbQueries.CreateRequest(context.Background(), database.CreateRequestParams{
-		Offset:         int64(offset),
-		ResultsPerPage: int64(resultsPerPage),
+	err = cfg.executeTransaction(context.Background(), func(ctx context.Context, qtx *database.Queries) error {
+		_, err := qtx.CreateRequest(ctx, database.CreateRequestParams{
+			Offset:         int64(offset),
+			ResultsPerPage: int64(resultsPerPage),
+		})
+		return err
 	})
 
 	if err != nil {
