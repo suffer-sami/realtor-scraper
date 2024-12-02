@@ -30,12 +30,15 @@ func (cfg *config) executeTransaction(ctx context.Context, txFunc func(context.C
 }
 
 func (cfg *config) storeAgent(agent Agent) error {
+	defer cfg.wg.Done()
+
 	return cfg.executeTransaction(context.Background(), func(ctx context.Context, qtx *database.Queries) error {
 		dbAgent, err := qtx.GetAgent(ctx, agent.ID)
 		if err != nil {
 			if err != sql.ErrNoRows {
 				return err
 			}
+
 			dbAgent, err = qtx.CreateAgent(ctx, database.CreateAgentParams{
 				ID:                   agent.ID,
 				FirstName:            toNullString(agent.FirstName),
@@ -61,6 +64,8 @@ func (cfg *config) storeAgent(agent Agent) error {
 				return err
 			}
 		}
+
+		agentId := toNullString(dbAgent.ID)
 		cfg.logger.Infof("Agent: %s", dbAgent.PersonName.String)
 
 		cfg.logger.Debugf("- sales data: %s", agent.RecentlySold.LastSoldDate)
@@ -69,7 +74,7 @@ func (cfg *config) storeAgent(agent Agent) error {
 			Min:          toNullInt(agent.RecentlySold.Min),
 			Max:          toNullInt(agent.RecentlySold.Max),
 			LastSoldDate: strToNullTime(agent.RecentlySold.LastSoldDate, time.DateOnly),
-			AgentID:      toNullString(dbAgent.ID),
+			AgentID:      agentId,
 		})
 
 		cfg.logger.Debugf("- listing data: %s", agent.ForSalePrice.LastListingDate)
@@ -78,7 +83,7 @@ func (cfg *config) storeAgent(agent Agent) error {
 			Min:             toNullInt(agent.ForSalePrice.Min),
 			Max:             toNullInt(agent.ForSalePrice.Max),
 			LastListingDate: timeToNullTime(agent.ForSalePrice.LastListingDate),
-			AgentID:         toNullString(dbAgent.ID),
+			AgentID:         agentId,
 		})
 
 		cfg.logger.Debugf("- social medias:")
@@ -87,7 +92,7 @@ func (cfg *config) storeAgent(agent Agent) error {
 			qtx.CreateSocialMedia(ctx, database.CreateSocialMediaParams{
 				Type:    toNullString(socialMedia.Type),
 				Href:    toNullString(socialMedia.Href),
-				AgentID: toNullString(dbAgent.ID),
+				AgentID: agentId,
 			})
 		}
 
@@ -98,7 +103,7 @@ func (cfg *config) storeAgent(agent Agent) error {
 				Country:       toNullString(feedLicense.Country),
 				LicenseNumber: toNullString(feedLicense.LicenseNumber),
 				StateCode:     toNullString(feedLicense.StateCode),
-				AgentID:       toNullString(dbAgent.ID),
+				AgentID:       agentId,
 			})
 		}
 
@@ -130,14 +135,13 @@ func (cfg *config) storeAgent(agent Agent) error {
 			}
 
 			err = qtx.CreateAgentMultipleListingService(ctx, database.CreateAgentMultipleListingServiceParams{
-				AgentID:                  toNullString(dbAgent.ID),
+				AgentID:                  agentId,
 				MultipleListingServiceID: toNullInt64(dbMls.ID),
 			})
 			if err != nil {
 				return err
 			}
 		}
-
 		cfg.logger.Debugf("- mls history:")
 		for _, mls := range agent.MlsHistory {
 			cfg.logger.Debugf("	* %s", mls.Abbreviation)
@@ -167,6 +171,7 @@ func (cfg *config) storeAgent(agent Agent) error {
 			}
 
 			if dbMls.InactivationDate.Time != mls.InactivationDate {
+				cfg.logger.Debugf("	* %s (update inactivation_date: %v)", mls.Abbreviation, mls.InactivationDate)
 				qtx.UpdateMultipleListingServiceInactivationDate(ctx, database.UpdateMultipleListingServiceInactivationDateParams{
 					InactivationDate: dbMls.InactivationDate,
 					ID:               dbMls.ID,
@@ -174,13 +179,53 @@ func (cfg *config) storeAgent(agent Agent) error {
 			}
 
 			err = qtx.CreateAgentMultipleListingService(ctx, database.CreateAgentMultipleListingServiceParams{
-				AgentID:                  toNullString(dbAgent.ID),
+				AgentID:                  agentId,
 				MultipleListingServiceID: toNullInt64(dbMls.ID),
 			})
 			if err != nil {
 				return err
 			}
 		}
+
+		cfg.logger.Debugf("- languages:")
+		for _, lang := range agent.Languages {
+			dbLang, err := qtx.GetLanguage(ctx, toNullString(lang))
+			if err != nil {
+				if err != sql.ErrNoRows {
+					return err
+				}
+
+				dbLang, err = qtx.CreateLanguage(ctx, toNullString(lang))
+				if err != nil {
+					return err
+				}
+			}
+
+			qtx.CreateAgentLanguage(ctx, database.CreateAgentLanguageParams{
+				LanguageID: toNullInt64(dbLang.ID),
+				AgentID:    agentId,
+			})
+		}
+		cfg.logger.Debugf("- user languages:")
+		for _, lang := range agent.UserLanguages {
+			dbLang, err := qtx.GetLanguage(ctx, toNullString(lang))
+			if err != nil {
+				if err != sql.ErrNoRows {
+					return err
+				}
+
+				dbLang, err = qtx.CreateLanguage(ctx, toNullString(lang))
+				if err != nil {
+					return err
+				}
+			}
+
+			qtx.CreateAgentUserLanguage(ctx, database.CreateAgentUserLanguageParams{
+				LanguageID: toNullInt64(dbLang.ID),
+				AgentID:    agentId,
+			})
+		}
+
 		return nil
 	})
 }
