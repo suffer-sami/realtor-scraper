@@ -20,6 +20,8 @@ VALUES (
     ?,
     ?
 )
+ON CONFLICT (abbreviation, license_number, member_id, type)
+    DO NOTHING
 RETURNING id, abbreviation, inactivation_date, license_number, member_id, type, is_primary
 `
 
@@ -52,4 +54,53 @@ func (q *Queries) CreateMultipleListingService(ctx context.Context, arg CreateMu
 		&i.IsPrimary,
 	)
 	return i, err
+}
+
+const getMultipleListingService = `-- name: GetMultipleListingService :one
+SELECT id, abbreviation, inactivation_date, license_number, member_id, type, is_primary FROM multiple_listing_services
+WHERE abbreviation = ? AND type = ? AND member_id = ? AND license_number = ?
+LIMIT 1
+`
+
+type GetMultipleListingServiceParams struct {
+	Abbreviation  sql.NullString
+	Type          sql.NullString
+	MemberID      sql.NullString
+	LicenseNumber sql.NullString
+}
+
+func (q *Queries) GetMultipleListingService(ctx context.Context, arg GetMultipleListingServiceParams) (MultipleListingService, error) {
+	row := q.db.QueryRowContext(ctx, getMultipleListingService,
+		arg.Abbreviation,
+		arg.Type,
+		arg.MemberID,
+		arg.LicenseNumber,
+	)
+	var i MultipleListingService
+	err := row.Scan(
+		&i.ID,
+		&i.Abbreviation,
+		&i.InactivationDate,
+		&i.LicenseNumber,
+		&i.MemberID,
+		&i.Type,
+		&i.IsPrimary,
+	)
+	return i, err
+}
+
+const updateMultipleListingServiceInactivationDate = `-- name: UpdateMultipleListingServiceInactivationDate :exec
+UPDATE multiple_listing_services
+SET inactivation_date = ?
+WHERE id = ?
+`
+
+type UpdateMultipleListingServiceInactivationDateParams struct {
+	InactivationDate sql.NullTime
+	ID               int64
+}
+
+func (q *Queries) UpdateMultipleListingServiceInactivationDate(ctx context.Context, arg UpdateMultipleListingServiceInactivationDateParams) error {
+	_, err := q.db.ExecContext(ctx, updateMultipleListingServiceInactivationDate, arg.InactivationDate, arg.ID)
+	return err
 }

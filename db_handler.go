@@ -72,7 +72,7 @@ func (cfg *config) storeAgent(agent Agent) error {
 			AgentID:      toNullString(dbAgent.ID),
 		})
 
-		cfg.logger.Debugf("- listing data: %s", agent.RecentlySold.LastSoldDate)
+		cfg.logger.Debugf("- listing data: %s", agent.ForSalePrice.LastListingDate)
 		qtx.CreateListingsData(ctx, database.CreateListingsDataParams{
 			Count:           toNullInt(agent.ForSalePrice.Count),
 			Min:             toNullInt(agent.ForSalePrice.Min),
@@ -100,6 +100,86 @@ func (cfg *config) storeAgent(agent Agent) error {
 				StateCode:     toNullString(feedLicense.StateCode),
 				AgentID:       toNullString(dbAgent.ID),
 			})
+		}
+
+		cfg.logger.Debugf("- mls:")
+		for _, mls := range agent.Mls {
+			cfg.logger.Debugf("	* %s", mls.Abbreviation)
+			dbMls, err := qtx.GetMultipleListingService(ctx, database.GetMultipleListingServiceParams{
+				Abbreviation:  toNullString(mls.Abbreviation),
+				Type:          toNullString(mls.Type),
+				MemberID:      toNullString(mls.MemberID),
+				LicenseNumber: toNullString(mls.LicenseNumber),
+			})
+
+			if err != nil {
+				if err != sql.ErrNoRows {
+					return err
+				}
+				dbMls, err = qtx.CreateMultipleListingService(ctx, database.CreateMultipleListingServiceParams{
+					Abbreviation:  toNullString(mls.Abbreviation),
+					LicenseNumber: toNullString(mls.LicenseNumber),
+					Type:          toNullString(mls.Type),
+					MemberID:      toNullString(mls.MemberID),
+					IsPrimary:     toNullBool(mls.Primary),
+				})
+
+				if err != nil {
+					return err
+				}
+			}
+
+			err = qtx.CreateAgentMultipleListingService(ctx, database.CreateAgentMultipleListingServiceParams{
+				AgentID:                  toNullString(dbAgent.ID),
+				MultipleListingServiceID: toNullInt64(dbMls.ID),
+			})
+			if err != nil {
+				return err
+			}
+		}
+
+		cfg.logger.Debugf("- mls history:")
+		for _, mls := range agent.MlsHistory {
+			cfg.logger.Debugf("	* %s", mls.Abbreviation)
+			dbMls, err := qtx.GetMultipleListingService(ctx, database.GetMultipleListingServiceParams{
+				Abbreviation:  toNullString(mls.Abbreviation),
+				Type:          toNullString(mls.Type),
+				MemberID:      toNullString(mls.Member.ID),
+				LicenseNumber: toNullString(mls.LicenseNumber),
+			})
+
+			if err != nil {
+				if err != sql.ErrNoRows {
+					return err
+				}
+				dbMls, err = qtx.CreateMultipleListingService(ctx, database.CreateMultipleListingServiceParams{
+					Abbreviation:     toNullString(mls.Abbreviation),
+					InactivationDate: timeToNullTime(mls.InactivationDate),
+					LicenseNumber:    toNullString(mls.LicenseNumber),
+					IsPrimary:        toNullBool(mls.Primary),
+					Type:             toNullString(mls.Type),
+					MemberID:         toNullString(mls.Member.ID),
+				})
+
+				if err != nil {
+					return err
+				}
+			}
+
+			if dbMls.InactivationDate.Time != mls.InactivationDate {
+				qtx.UpdateMultipleListingServiceInactivationDate(ctx, database.UpdateMultipleListingServiceInactivationDateParams{
+					InactivationDate: dbMls.InactivationDate,
+					ID:               dbMls.ID,
+				})
+			}
+
+			err = qtx.CreateAgentMultipleListingService(ctx, database.CreateAgentMultipleListingServiceParams{
+				AgentID:                  toNullString(dbAgent.ID),
+				MultipleListingServiceID: toNullInt64(dbMls.ID),
+			})
+			if err != nil {
+				return err
+			}
 		}
 		return nil
 	})
