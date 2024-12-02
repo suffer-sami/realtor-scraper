@@ -37,13 +37,16 @@ func main() {
 		if err != nil {
 			cfg.logger.Fatalf("error getting request (%d, %d): %v", request.offset, request.resultsPerPage, err)
 		}
-		request.processed = true
+
 		for _, agent := range agents {
-			if err := cfg.storeAgent(agent); err != nil {
-				cfg.logger.Errorf("error storing agent (ID: %s): %v", agent.ID, err)
-			}
+			cfg.wg.Add(1)
+			go func() {
+				if err := cfg.storeAgent(agent); err != nil {
+					cfg.logger.Errorf("error storing agent (ID: %s): %v", agent.ID, err)
+				}
+			}()
 		}
 		break
-
 	}
+	cfg.wg.Wait()
 }
