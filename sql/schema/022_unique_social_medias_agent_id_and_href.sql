@@ -12,7 +12,7 @@ CREATE TABLE social_medias (
         FOREIGN KEY (agent_id) 
         REFERENCES agents(id) 
         ON DELETE CASCADE,
-    CONSTRAINT unique_agent_href 
+    CONSTRAINT unique_social_medias_agent_id_and_href 
         UNIQUE (agent_id, href)
 );
 

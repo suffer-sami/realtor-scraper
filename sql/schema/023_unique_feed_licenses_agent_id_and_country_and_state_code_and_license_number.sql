@@ -13,7 +13,7 @@ CREATE TABLE feed_licenses (
         FOREIGN KEY (agent_id) 
         REFERENCES agents(id) 
         ON DELETE CASCADE,
-    CONSTRAINT unique_feed_license
+    CONSTRAINT unique_feed_licenses_agent_id_and_country_and_state_code_and_license_number
         UNIQUE (agent_id, country, state_code, license_number)
 );
 
