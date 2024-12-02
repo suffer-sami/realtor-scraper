@@ -43,7 +43,7 @@ func timeToNullTime(t time.Time) sql.NullTime {
 // Converts a string w/ layout to sql.NullTime
 func strToNullTime(t string, layout string) sql.NullTime {
 	parsedTime, err := time.Parse(layout, t)
-	if err != nil || t == "" {
+	if err != nil || t == "" || parsedTime.IsZero() {
 		return sql.NullTime{Valid: false}
 	}
 	return sql.NullTime{Time: parsedTime, Valid: true}
