@@ -1,9 +1,5 @@
 -- +goose Up
-CREATE TEMPORARY TABLE temp_feed_licenses AS SELECT * FROM feed_licenses;
-
-DROP TABLE feed_licenses;
-
-CREATE TABLE feed_licenses (
+CREATE TABLE new_feed_licenses (
     id INTEGER PRIMARY KEY,
     country TEXT,
     license_number TEXT,
@@ -17,16 +13,15 @@ CREATE TABLE feed_licenses (
         UNIQUE (agent_id, country, state_code, license_number)
 );
 
-INSERT INTO feed_licenses SELECT * FROM temp_feed_licenses;
-
-DROP TABLE temp_feed_licenses;
-
--- +goose Down
-CREATE TEMPORARY TABLE temp_feed_licenses AS SELECT * FROM feed_licenses;
+INSERT INTO new_feed_licenses (id, country, license_number, state_code, agent_id)
+SELECT id, country, license_number, state_code, agent_id FROM feed_licenses;
 
 DROP TABLE feed_licenses;
 
-CREATE TABLE feed_licenses (
+ALTER TABLE new_feed_licenses RENAME TO feed_licenses;
+
+-- +goose Down
+CREATE TABLE new_feed_licenses (
     id INTEGER PRIMARY KEY,
     country TEXT,
     license_number TEXT,
@@ -38,6 +33,9 @@ CREATE TABLE feed_licenses (
         ON DELETE CASCADE
 );
 
-INSERT INTO feed_licenses SELECT * FROM temp_feed_licenses;
+INSERT INTO new_feed_licenses (id, country, license_number, state_code, agent_id)
+SELECT id, country, license_number, state_code, agent_id FROM feed_licenses;
 
-DROP TABLE temp_feed_licenses;
+DROP TABLE feed_licenses;
+
+ALTER TABLE new_feed_licenses RENAME TO feed_licenses;

@@ -1,9 +1,5 @@
 -- +goose Up
-CREATE TEMPORARY TABLE temp_multiple_listing_services AS SELECT * FROM multiple_listing_services;
-
-DROP TABLE multiple_listing_services;
-
-CREATE TABLE multiple_listing_services (
+CREATE TABLE new_multiple_listing_services (
     id INTEGER PRIMARY KEY,
     abbreviation TEXT,
     inactivation_date DATETIME,
@@ -15,16 +11,15 @@ CREATE TABLE multiple_listing_services (
         UNIQUE (abbreviation, type, member_id, license_number)
 );
 
-INSERT INTO multiple_listing_services SELECT * FROM temp_multiple_listing_services;
-
-DROP TABLE temp_multiple_listing_services;
-
--- +goose Down
-CREATE TEMPORARY TABLE temp_multiple_listing_services AS SELECT * FROM multiple_listing_services;
+INSERT INTO new_multiple_listing_services (id, abbreviation, inactivation_date, license_number, member_id, member_id, type, is_primary)
+SELECT id, abbreviation, inactivation_date, license_number, member_id, member_id, type, is_primary FROM multiple_listing_services;
 
 DROP TABLE multiple_listing_services;
 
-CREATE TABLE multiple_listing_services (
+ALTER TABLE new_multiple_listing_services RENAME TO multiple_listing_services;
+
+-- +goose Down
+CREATE TABLE new_multiple_listing_services (
     id INTEGER PRIMARY KEY,
     abbreviation TEXT,
     inactivation_date DATETIME,
@@ -34,6 +29,9 @@ CREATE TABLE multiple_listing_services (
     is_primary BOOLEAN
 );
 
-INSERT INTO multiple_listing_services SELECT * FROM temp_multiple_listing_services;
+INSERT INTO new_multiple_listing_services (id, abbreviation, inactivation_date, license_number, member_id, member_id, type, is_primary)
+SELECT id, abbreviation, inactivation_date, license_number, member_id, member_id, type, is_primary FROM multiple_listing_services;
 
-DROP TABLE temp_multiple_listing_services;
+DROP TABLE multiple_listing_services;
+
+ALTER TABLE new_multiple_listing_services RENAME TO multiple_listing_services;

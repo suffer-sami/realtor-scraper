@@ -1,9 +1,5 @@
 -- +goose Up
-CREATE TEMPORARY TABLE temp_social_medias AS SELECT * FROM social_medias;
-
-DROP TABLE social_medias;
-
-CREATE TABLE social_medias (
+CREATE TABLE new_social_medias (
     id INTEGER PRIMARY KEY,
     type TEXT,
     href TEXT,
@@ -16,16 +12,15 @@ CREATE TABLE social_medias (
         UNIQUE (agent_id, href)
 );
 
-INSERT INTO social_medias SELECT * FROM temp_social_medias;
-
-DROP TABLE temp_social_medias;
-
--- +goose Down
-CREATE TEMPORARY TABLE temp_social_medias AS SELECT * FROM social_medias;
+INSERT INTO new_social_medias (id, type, href, agent_id)
+SELECT id, type, href, agent_id FROM social_medias;
 
 DROP TABLE social_medias;
 
-CREATE TABLE social_medias (
+ALTER TABLE new_social_medias RENAME TO social_medias;
+
+-- +goose Down
+CREATE TABLE new_social_medias (
     id INTEGER PRIMARY KEY,
     type TEXT,
     href TEXT,
@@ -36,6 +31,9 @@ CREATE TABLE social_medias (
         ON DELETE CASCADE
 );
 
-INSERT INTO social_medias SELECT * FROM temp_social_medias;
+INSERT INTO new_social_medias (id, type, href, agent_id)
+SELECT id, type, href, agent_id FROM social_medias;
 
-DROP TABLE temp_social_medias;
+DROP TABLE social_medias;
+
+ALTER TABLE new_social_medias RENAME TO social_medias;
