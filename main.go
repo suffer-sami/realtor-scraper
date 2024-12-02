@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"time"
 
 	_ "github.com/tursodatabase/go-libsql"
 )
@@ -25,28 +26,27 @@ func main() {
 	if err != nil {
 		cfg.logger.Fatalf("error getting search requests: %v", err)
 	}
+	cfg.addRequests(allRequests)
 
+	count := 0
 	for i := range allRequests {
-		request := &allRequests[i]
-		if request.processed {
+		req := &allRequests[i]
+		if req.processed {
 			continue
 		}
-
-		cfg.logger.Infof("Getting Agents (Offset: %d, ResultsPerPage: %d)...\n", request.offset, request.resultsPerPage)
-		agents, err := cfg.getAgents(request.offset, request.resultsPerPage)
+		request, err := cfg.getRequest(req.offset)
 		if err != nil {
-			cfg.logger.Fatalf("error getting request (%d, %d): %v", request.offset, request.resultsPerPage, err)
+			cfg.logger.Fatalf("error: %v", err)
 		}
 
-		for _, agent := range agents {
-			cfg.wg.Add(1)
-			go func() {
-				if err := cfg.storeAgent(agent); err != nil {
-					cfg.logger.Errorf("error storing agent (ID: %s): %v", agent.ID, err)
-				}
-			}()
+		cfg.wg.Add(1)
+		go cfg.processRequest(request)
+		time.Sleep(1 * time.Second)
+
+		count++
+		if count >= 5 {
+			break
 		}
-		break
 	}
 	cfg.wg.Wait()
 }

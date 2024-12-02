@@ -44,6 +44,29 @@ func getRequestParams(offset, resultsPerPage int) SearchRequestParams {
 	}
 }
 
+func (cfg *config) processRequest(request Request) {
+	cfg.concurrencyControl <- struct{}{}
+	defer func() {
+		<-cfg.concurrencyControl
+		cfg.wg.Done()
+	}()
+
+	cfg.logger.Infof("Getting Agents (Offset: %d, ResultsPerPage: %d)...\n", request.offset, request.resultsPerPage)
+
+	agents, err := cfg.getAgents(request.offset, request.resultsPerPage)
+	if err != nil {
+		cfg.logger.Errorf("error getting request (%d, %d): %v", request.offset, request.resultsPerPage, err)
+		return
+	}
+
+	cfg.markRequestProcessed(request.offset)
+
+	cfg.wg.Add(1)
+	go func() {
+		cfg.storeAgents(agents)
+	}()
+}
+
 // getSearchResults fetches search results from the API.
 func (cfg *config) getSearchResults(payload SearchRequestParams) (SearchRequestResponse, error) {
 	parsedURL, _ := url.Parse(apiEndpoint)

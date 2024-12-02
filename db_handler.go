@@ -29,9 +29,20 @@ func (cfg *config) executeTransaction(ctx context.Context, txFunc func(context.C
 	return tx.Commit()
 }
 
+func (cfg *config) storeAgents(agents []Agent) {
+	defer cfg.wg.Done()
+	for _, agent := range agents {
+		cfg.wg.Add(1)
+		go func() {
+			if err := cfg.storeAgent(agent); err != nil {
+				cfg.logger.Errorf("error storing agent (ID: %s): %v", agent.ID, err)
+			}
+		}()
+	}
+}
+
 func (cfg *config) storeAgent(agent Agent) error {
 	defer cfg.wg.Done()
-
 	return cfg.executeTransaction(context.Background(), func(ctx context.Context, qtx *database.Queries) error {
 		dbAgent, err := qtx.GetAgent(ctx, agent.ID)
 		if err != nil {
