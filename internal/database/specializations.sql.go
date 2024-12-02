@@ -13,12 +13,25 @@ import (
 const createSpecialization = `-- name: CreateSpecialization :one
 INSERT INTO specializations (name)
 VALUES (?)
-ON CONFLICT(name) DO UPDATE SET name = EXCLUDED.name
+ON CONFLICT(name) DO NOTHING
 RETURNING id, name
 `
 
 func (q *Queries) CreateSpecialization(ctx context.Context, name sql.NullString) (Specialization, error) {
 	row := q.db.QueryRowContext(ctx, createSpecialization, name)
+	var i Specialization
+	err := row.Scan(&i.ID, &i.Name)
+	return i, err
+}
+
+const getSpecialization = `-- name: GetSpecialization :one
+SELECT id, name FROM specializations 
+WHERE name = ? 
+LIMIT 1
+`
+
+func (q *Queries) GetSpecialization(ctx context.Context, name sql.NullString) (Specialization, error) {
+	row := q.db.QueryRowContext(ctx, getSpecialization, name)
 	var i Specialization
 	err := row.Scan(&i.ID, &i.Name)
 	return i, err

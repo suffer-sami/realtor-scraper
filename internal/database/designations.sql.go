@@ -13,12 +13,25 @@ import (
 const createDesignation = `-- name: CreateDesignation :one
 INSERT INTO designations (name)
 VALUES (?)
-ON CONFLICT(name) DO UPDATE SET name = EXCLUDED.name
+ON CONFLICT(name) DO NOTHING
 RETURNING id, name
 `
 
 func (q *Queries) CreateDesignation(ctx context.Context, name sql.NullString) (Designation, error) {
 	row := q.db.QueryRowContext(ctx, createDesignation, name)
+	var i Designation
+	err := row.Scan(&i.ID, &i.Name)
+	return i, err
+}
+
+const getDesignation = `-- name: GetDesignation :one
+SELECT id, name FROM designations 
+WHERE name = ? 
+LIMIT 1
+`
+
+func (q *Queries) GetDesignation(ctx context.Context, name sql.NullString) (Designation, error) {
+	row := q.db.QueryRowContext(ctx, getDesignation, name)
 	var i Designation
 	err := row.Scan(&i.ID, &i.Name)
 	return i, err

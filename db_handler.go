@@ -304,6 +304,46 @@ func (cfg *config) storeAgent(agent Agent) error {
 			})
 		}
 
+		cfg.logger.Debugf("- designations:")
+		for _, designation := range agent.Designations {
+			cfg.logger.Debugf("	* %s", designation.Name)
+			dbDesignation, err := qtx.GetDesignation(ctx, toNullString(designation.Name))
+			if err != nil {
+				if err != sql.ErrNoRows {
+					return err
+				}
+
+				dbDesignation, err = qtx.CreateDesignation(ctx, toNullString(designation.Name))
+				if err != nil {
+					return err
+				}
+			}
+
+			qtx.CreateAgentDesignation(ctx, database.CreateAgentDesignationParams{
+				DesignationID: toNullInt64(dbDesignation.ID),
+				AgentID:       agentId,
+			})
+		}
+		cfg.logger.Debugf("- specializations:")
+		for _, specialization := range agent.Specializations {
+			cfg.logger.Debugf("	* %s", specialization.Name)
+			dbSpecialization, err := qtx.GetSpecialization(ctx, toNullString(specialization.Name))
+			if err != nil {
+				if err != sql.ErrNoRows {
+					return err
+				}
+
+				dbSpecialization, err = qtx.CreateSpecialization(ctx, toNullString(specialization.Name))
+				if err != nil {
+					return err
+				}
+			}
+
+			qtx.CreateAgentSpecialization(ctx, database.CreateAgentSpecializationParams{
+				SpecializationID: toNullInt64(dbSpecialization.ID),
+				AgentID:          agentId,
+			})
+		}
 		return nil
 	})
 }
