@@ -16,7 +16,7 @@ VALUES (
     ?,
     ?
 )
-ON CONFLICT(name, state_code) DO UPDATE SET name = EXCLUDED.name
+ON CONFLICT(name, state_code) DO NOTHING
 RETURNING id, name, state_code
 `
 
@@ -27,6 +27,24 @@ type CreateAreaParams struct {
 
 func (q *Queries) CreateArea(ctx context.Context, arg CreateAreaParams) (Area, error) {
 	row := q.db.QueryRowContext(ctx, createArea, arg.Name, arg.StateCode)
+	var i Area
+	err := row.Scan(&i.ID, &i.Name, &i.StateCode)
+	return i, err
+}
+
+const getArea = `-- name: GetArea :one
+SELECT id, name, state_code FROM areas
+WHERE name = ? AND state_code = ?
+LIMIT 1
+`
+
+type GetAreaParams struct {
+	Name      sql.NullString
+	StateCode sql.NullString
+}
+
+func (q *Queries) GetArea(ctx context.Context, arg GetAreaParams) (Area, error) {
+	row := q.db.QueryRowContext(ctx, getArea, arg.Name, arg.StateCode)
 	var i Area
 	err := row.Scan(&i.ID, &i.Name, &i.StateCode)
 	return i, err

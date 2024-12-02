@@ -4,5 +4,10 @@ VALUES (
     ?,
     ?
 )
-ON CONFLICT(name, state_code) DO UPDATE SET name = EXCLUDED.name
+ON CONFLICT(name, state_code) DO NOTHING
 RETURNING *;
+
+-- name: GetArea :one
+SELECT * FROM areas
+WHERE name = ? AND state_code = ?
+LIMIT 1;

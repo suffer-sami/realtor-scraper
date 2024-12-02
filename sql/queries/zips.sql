@@ -1,5 +1,10 @@
 -- name: CreateZip :one
 INSERT INTO zips (zip_code)
 VALUES (?)
-ON CONFLICT(zip_code) DO UPDATE SET zip_code = EXCLUDED.zip_code
+ON CONFLICT(zip_code) DO NOTHING
 RETURNING *;
+
+-- name: GetZip :one
+SELECT * FROM zips 
+WHERE zip_code = ? 
+LIMIT 1;

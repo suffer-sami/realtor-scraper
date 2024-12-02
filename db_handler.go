@@ -189,6 +189,7 @@ func (cfg *config) storeAgent(agent Agent) error {
 
 		cfg.logger.Debugf("- languages:")
 		for _, lang := range agent.Languages {
+			cfg.logger.Debugf("	* %s", lang)
 			dbLang, err := qtx.GetLanguage(ctx, toNullString(lang))
 			if err != nil {
 				if err != sql.ErrNoRows {
@@ -208,6 +209,7 @@ func (cfg *config) storeAgent(agent Agent) error {
 		}
 		cfg.logger.Debugf("- user languages:")
 		for _, lang := range agent.UserLanguages {
+			cfg.logger.Debugf("	* %s", lang)
 			dbLang, err := qtx.GetLanguage(ctx, toNullString(lang))
 			if err != nil {
 				if err != sql.ErrNoRows {
@@ -223,6 +225,82 @@ func (cfg *config) storeAgent(agent Agent) error {
 			qtx.CreateAgentUserLanguage(ctx, database.CreateAgentUserLanguageParams{
 				LanguageID: toNullInt64(dbLang.ID),
 				AgentID:    agentId,
+			})
+		}
+
+		cfg.logger.Debugf("- zips:")
+		for _, zip := range agent.Zips {
+			cfg.logger.Debugf("	* %s", zip)
+			dbZip, err := qtx.GetZip(ctx, toNullString(zip))
+			if err != nil {
+				if err != sql.ErrNoRows {
+					return err
+				}
+
+				dbZip, err = qtx.CreateZip(ctx, toNullString(zip))
+				if err != nil {
+					return err
+				}
+			}
+
+			qtx.CreateAgentZip(ctx, database.CreateAgentZipParams{
+				ZipID:   toNullInt64(dbZip.ID),
+				AgentID: agentId,
+			})
+		}
+
+		cfg.logger.Debugf("- areas:")
+		for _, area := range agent.ServedAreas {
+			cfg.logger.Debugf("	* (%s, %s)", area.Name, area.StateCode)
+			dbArea, err := qtx.GetArea(ctx, database.GetAreaParams{
+				Name:      toNullString(area.Name),
+				StateCode: toNullString(area.StateCode),
+			})
+
+			if err != nil {
+				if err != sql.ErrNoRows {
+					return err
+				}
+
+				dbArea, err = qtx.CreateArea(ctx, database.CreateAreaParams{
+					Name:      toNullString(area.Name),
+					StateCode: toNullString(area.StateCode),
+				})
+				if err != nil {
+					return err
+				}
+			}
+
+			qtx.CreateAgentServedArea(ctx, database.CreateAgentServedAreaParams{
+				AreaID:  toNullInt64(dbArea.ID),
+				AgentID: agentId,
+			})
+		}
+		cfg.logger.Debugf("- marketing areas:")
+		for _, area := range agent.MarketingAreaCities {
+			cfg.logger.Debugf("	* (%s, %s)", area.Name, area.StateCode)
+			dbArea, err := qtx.GetArea(ctx, database.GetAreaParams{
+				Name:      toNullString(area.Name),
+				StateCode: toNullString(area.StateCode),
+			})
+
+			if err != nil {
+				if err != sql.ErrNoRows {
+					return err
+				}
+
+				dbArea, err = qtx.CreateArea(ctx, database.CreateAreaParams{
+					Name:      toNullString(area.Name),
+					StateCode: toNullString(area.StateCode),
+				})
+				if err != nil {
+					return err
+				}
+			}
+
+			qtx.CreateAgentMarketingArea(ctx, database.CreateAgentMarketingAreaParams{
+				AreaID:  toNullInt64(dbArea.ID),
+				AgentID: agentId,
 			})
 		}
 

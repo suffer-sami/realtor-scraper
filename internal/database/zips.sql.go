@@ -13,12 +13,25 @@ import (
 const createZip = `-- name: CreateZip :one
 INSERT INTO zips (zip_code)
 VALUES (?)
-ON CONFLICT(zip_code) DO UPDATE SET zip_code = EXCLUDED.zip_code
+ON CONFLICT(zip_code) DO NOTHING
 RETURNING id, zip_code
 `
 
 func (q *Queries) CreateZip(ctx context.Context, zipCode sql.NullString) (Zip, error) {
 	row := q.db.QueryRowContext(ctx, createZip, zipCode)
+	var i Zip
+	err := row.Scan(&i.ID, &i.ZipCode)
+	return i, err
+}
+
+const getZip = `-- name: GetZip :one
+SELECT id, zip_code FROM zips 
+WHERE zip_code = ? 
+LIMIT 1
+`
+
+func (q *Queries) GetZip(ctx context.Context, zipCode sql.NullString) (Zip, error) {
+	row := q.db.QueryRowContext(ctx, getZip, zipCode)
 	var i Zip
 	err := row.Scan(&i.ID, &i.ZipCode)
 	return i, err
