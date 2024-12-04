@@ -9,13 +9,13 @@ import (
 )
 
 // Converts a string to sql.NullString
-func toNullString(s string) sql.NullString {
+func stringToNullString(s string) sql.NullString {
 	s = strings.TrimSpace(s)
 	return sql.NullString{String: s, Valid: s != ""}
 }
 
 // Converts any object to json string
-func toJsonString(o any) (string, error) {
+func anyToJsonString(o any) (string, error) {
 	data, err := json.Marshal(o)
 	if err != nil {
 		return "", err
@@ -24,17 +24,17 @@ func toJsonString(o any) (string, error) {
 }
 
 // Converts an int to sql.NullInt64
-func toNullInt(i int) sql.NullInt64 {
+func intToNullInt64(i int) sql.NullInt64 {
 	return sql.NullInt64{Int64: int64(i), Valid: i != 0}
 }
 
 // Converts an int64 to sql.NullInt64
-func toNullInt64(i int64) sql.NullInt64 {
+func int64ToNullInt64(i int64) sql.NullInt64 {
 	return sql.NullInt64{Int64: i, Valid: i != 0}
 }
 
 // Converts a bool to sql.NullBool
-func toNullBool(b bool) sql.NullBool {
+func boolToNullBool(b bool) sql.NullBool {
 	return sql.NullBool{Bool: b, Valid: true}
 }
 
