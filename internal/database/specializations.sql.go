@@ -14,25 +14,25 @@ const createSpecialization = `-- name: CreateSpecialization :one
 INSERT INTO specializations (name)
 VALUES (?)
 ON CONFLICT(name) DO NOTHING
-RETURNING id, name
+RETURNING id
 `
 
-func (q *Queries) CreateSpecialization(ctx context.Context, name sql.NullString) (Specialization, error) {
+func (q *Queries) CreateSpecialization(ctx context.Context, name sql.NullString) (int64, error) {
 	row := q.db.QueryRowContext(ctx, createSpecialization, name)
-	var i Specialization
-	err := row.Scan(&i.ID, &i.Name)
-	return i, err
+	var id int64
+	err := row.Scan(&id)
+	return id, err
 }
 
-const getSpecialization = `-- name: GetSpecialization :one
-SELECT id, name FROM specializations 
+const getSpecializationID = `-- name: GetSpecializationID :one
+SELECT id FROM specializations 
 WHERE name = ? 
 LIMIT 1
 `
 
-func (q *Queries) GetSpecialization(ctx context.Context, name sql.NullString) (Specialization, error) {
-	row := q.db.QueryRowContext(ctx, getSpecialization, name)
-	var i Specialization
-	err := row.Scan(&i.ID, &i.Name)
-	return i, err
+func (q *Queries) GetSpecializationID(ctx context.Context, name sql.NullString) (int64, error) {
+	row := q.db.QueryRowContext(ctx, getSpecializationID, name)
+	var id int64
+	err := row.Scan(&id)
+	return id, err
 }

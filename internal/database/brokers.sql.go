@@ -19,7 +19,7 @@ VALUES (
     ?
 )
 ON CONFLICT(fulfillment_id) DO NOTHING
-RETURNING id, fulfillment_id, name, photo, video
+RETURNING id
 `
 
 type CreateBrokerParams struct {
@@ -29,39 +29,27 @@ type CreateBrokerParams struct {
 	Video         sql.NullString
 }
 
-func (q *Queries) CreateBroker(ctx context.Context, arg CreateBrokerParams) (Broker, error) {
+func (q *Queries) CreateBroker(ctx context.Context, arg CreateBrokerParams) (int64, error) {
 	row := q.db.QueryRowContext(ctx, createBroker,
 		arg.FulfillmentID,
 		arg.Name,
 		arg.Photo,
 		arg.Video,
 	)
-	var i Broker
-	err := row.Scan(
-		&i.ID,
-		&i.FulfillmentID,
-		&i.Name,
-		&i.Photo,
-		&i.Video,
-	)
-	return i, err
+	var id int64
+	err := row.Scan(&id)
+	return id, err
 }
 
-const getBroker = `-- name: GetBroker :one
-SELECT id, fulfillment_id, name, photo, video FROM brokers
+const getBrokerID = `-- name: GetBrokerID :one
+SELECT id FROM brokers
 WHERE fulfillment_id = ? 
 LIMIT 1
 `
 
-func (q *Queries) GetBroker(ctx context.Context, fulfillmentID sql.NullInt64) (Broker, error) {
-	row := q.db.QueryRowContext(ctx, getBroker, fulfillmentID)
-	var i Broker
-	err := row.Scan(
-		&i.ID,
-		&i.FulfillmentID,
-		&i.Name,
-		&i.Photo,
-		&i.Video,
-	)
-	return i, err
+func (q *Queries) GetBrokerID(ctx context.Context, fulfillmentID sql.NullInt64) (int64, error) {
+	row := q.db.QueryRowContext(ctx, getBrokerID, fulfillmentID)
+	var id int64
+	err := row.Scan(&id)
+	return id, err
 }

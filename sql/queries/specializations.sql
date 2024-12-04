@@ -2,9 +2,9 @@
 INSERT INTO specializations (name)
 VALUES (?)
 ON CONFLICT(name) DO NOTHING
-RETURNING *;
+RETURNING id;
 
--- name: GetSpecialization :one
-SELECT * FROM specializations 
+-- name: GetSpecializationID :one
+SELECT id FROM specializations 
 WHERE name = ? 
 LIMIT 1;

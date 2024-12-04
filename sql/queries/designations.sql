@@ -2,9 +2,9 @@
 INSERT INTO designations (name)
 VALUES (?)
 ON CONFLICT(name) DO NOTHING
-RETURNING *;
+RETURNING id;
 
--- name: GetDesignation :one
-SELECT * FROM designations 
+-- name: GetDesignationID :one
+SELECT id FROM designations 
 WHERE name = ? 
 LIMIT 1;

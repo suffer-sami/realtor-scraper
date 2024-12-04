@@ -5,7 +5,7 @@ ON CONFLICT (line, line2, city, state_code, postal_code)
     DO NOTHING
 RETURNING id;
 
--- name: GetAddress :one
+-- name: GetAddressID :one
 SELECT id
 FROM addresses
 WHERE line = ?

@@ -9,10 +9,22 @@ import (
 	"time"
 )
 
+type Address struct {
+	ID         int64
+	Line       sql.NullString
+	Line2      sql.NullString
+	City       sql.NullString
+	Country    sql.NullString
+	PostalCode sql.NullString
+	State      sql.NullString
+	StateCode  sql.NullString
+}
+
 type Agent struct {
 	ID                   string
 	CreatedAt            time.Time
 	UpdatedAt            time.Time
+	ProfileUrl           sql.NullString
 	FirstName            sql.NullString
 	LastName             sql.NullString
 	NickName             sql.NullString
@@ -20,17 +32,19 @@ type Agent struct {
 	Title                sql.NullString
 	Slogan               sql.NullString
 	Email                sql.NullString
-	AgentRating          sql.NullInt64
 	Description          sql.NullString
+	Video                sql.NullString
+	Photo                sql.NullString
+	Website              sql.NullString
+	AgentRating          sql.NullInt64
 	RecommendationsCount sql.NullInt64
 	ReviewCount          sql.NullInt64
-	LastUpdated          sql.NullTime
 	FirstMonth           sql.NullInt64
 	FirstYear            sql.NullInt64
-	Video                sql.NullString
-	WebUrl               sql.NullString
-	Href                 sql.NullString
-	Photo                sql.NullString
+	LastUpdated          sql.NullTime
+	AddressID            sql.NullInt64
+	BrokerID             sql.NullInt64
+	OfficeID             sql.NullInt64
 }
 
 type AgentDesignation struct {
@@ -87,11 +101,6 @@ type Broker struct {
 	Video         sql.NullString
 }
 
-type BrokerAgent struct {
-	BrokerID sql.NullInt64
-	AgentID  sql.NullString
-}
-
 type Designation struct {
 	ID   int64
 	Name sql.NullString
@@ -128,6 +137,18 @@ type MultipleListingService struct {
 	MemberID         sql.NullString
 	Type             sql.NullString
 	IsPrimary        sql.NullBool
+}
+
+type Office struct {
+	ID            int64
+	Name          sql.NullString
+	Photo         sql.NullString
+	Website       sql.NullString
+	Email         sql.NullString
+	Slogan        sql.NullString
+	Video         sql.NullString
+	FulfillmentID sql.NullInt64
+	AddressID     sql.NullInt64
 }
 
 type RawAgent struct {

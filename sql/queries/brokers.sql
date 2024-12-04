@@ -7,9 +7,9 @@ VALUES (
     ?
 )
 ON CONFLICT(fulfillment_id) DO NOTHING
-RETURNING *;
+RETURNING id;
 
--- name: GetBroker :one
-SELECT * FROM brokers
+-- name: GetBrokerID :one
+SELECT id FROM brokers
 WHERE fulfillment_id = ? 
 LIMIT 1;

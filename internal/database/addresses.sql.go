@@ -43,7 +43,7 @@ func (q *Queries) CreateAddress(ctx context.Context, arg CreateAddressParams) (i
 	return id, err
 }
 
-const getAddress = `-- name: GetAddress :one
+const getAddressID = `-- name: GetAddressID :one
 SELECT id
 FROM addresses
 WHERE line = ?
@@ -54,7 +54,7 @@ WHERE line = ?
 LIMIT 1
 `
 
-type GetAddressParams struct {
+type GetAddressIDParams struct {
 	Line       sql.NullString
 	Line2      sql.NullString
 	City       sql.NullString
@@ -62,8 +62,8 @@ type GetAddressParams struct {
 	PostalCode sql.NullString
 }
 
-func (q *Queries) GetAddress(ctx context.Context, arg GetAddressParams) (int64, error) {
-	row := q.db.QueryRowContext(ctx, getAddress,
+func (q *Queries) GetAddressID(ctx context.Context, arg GetAddressIDParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, getAddressID,
 		arg.Line,
 		arg.Line2,
 		arg.City,
