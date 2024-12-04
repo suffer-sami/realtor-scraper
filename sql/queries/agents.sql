@@ -51,10 +51,20 @@ RETURNING *;
 SELECT * FROM agents WHERE id = ?;
 
 
--- name: UpdateAgentForeignKeys :exec
+-- name: UpdateAgentAddressID :exec
 UPDATE agents
 SET 
-    address_id = ?,
-    broker_id = ?,
+    address_id = ?
+WHERE id = ?;
+
+-- name: UpdateAgentBrokerID :exec
+UPDATE agents
+SET 
+    broker_id = ?
+WHERE id = ?;
+
+-- name: UpdateAgentOfficeID :exec
+UPDATE agents
+SET 
     office_id = ?
 WHERE id = ?;

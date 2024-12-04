@@ -170,28 +170,53 @@ func (q *Queries) GetAgent(ctx context.Context, id string) (Agent, error) {
 	return i, err
 }
 
-const updateAgentForeignKeys = `-- name: UpdateAgentForeignKeys :exec
+const updateAgentAddressID = `-- name: UpdateAgentAddressID :exec
 UPDATE agents
 SET 
-    address_id = ?,
-    broker_id = ?,
+    address_id = ?
+WHERE id = ?
+`
+
+type UpdateAgentAddressIDParams struct {
+	AddressID sql.NullInt64
+	ID        string
+}
+
+func (q *Queries) UpdateAgentAddressID(ctx context.Context, arg UpdateAgentAddressIDParams) error {
+	_, err := q.db.ExecContext(ctx, updateAgentAddressID, arg.AddressID, arg.ID)
+	return err
+}
+
+const updateAgentBrokerID = `-- name: UpdateAgentBrokerID :exec
+UPDATE agents
+SET 
+    broker_id = ?
+WHERE id = ?
+`
+
+type UpdateAgentBrokerIDParams struct {
+	BrokerID sql.NullInt64
+	ID       string
+}
+
+func (q *Queries) UpdateAgentBrokerID(ctx context.Context, arg UpdateAgentBrokerIDParams) error {
+	_, err := q.db.ExecContext(ctx, updateAgentBrokerID, arg.BrokerID, arg.ID)
+	return err
+}
+
+const updateAgentOfficeID = `-- name: UpdateAgentOfficeID :exec
+UPDATE agents
+SET 
     office_id = ?
 WHERE id = ?
 `
 
-type UpdateAgentForeignKeysParams struct {
-	AddressID sql.NullInt64
-	BrokerID  sql.NullInt64
-	OfficeID  sql.NullInt64
-	ID        string
+type UpdateAgentOfficeIDParams struct {
+	OfficeID sql.NullInt64
+	ID       string
 }
 
-func (q *Queries) UpdateAgentForeignKeys(ctx context.Context, arg UpdateAgentForeignKeysParams) error {
-	_, err := q.db.ExecContext(ctx, updateAgentForeignKeys,
-		arg.AddressID,
-		arg.BrokerID,
-		arg.OfficeID,
-		arg.ID,
-	)
+func (q *Queries) UpdateAgentOfficeID(ctx context.Context, arg UpdateAgentOfficeIDParams) error {
+	_, err := q.db.ExecContext(ctx, updateAgentOfficeID, arg.OfficeID, arg.ID)
 	return err
 }
