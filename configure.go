@@ -20,6 +20,7 @@ const (
 	defaultRequestTimeout       = 30 * time.Second
 	defaultThrottleRequestLimit = 5
 	defaultThrottleTimeout      = 5 * time.Second
+	defaultUseDbLocal           = true
 	defaultLoggerPrefix         = "realtor-scraper"
 	defaultLogLevel             = "INFO"
 )
@@ -124,6 +125,12 @@ func configure(args []string) (*config, error) {
 	if jwtSecret == "" {
 		return nil, fmt.Errorf("JWT_SECRET must be set")
 	}
+	useDbLocal := defaultUseDbLocal
+	if useDbLocalStr := os.Getenv("USE_DB_LOCAL"); useDbLocalStr != "" {
+		if newUseDbLocalStr, err := strconv.ParseBool(useDbLocalStr); err == nil {
+			useDbLocal = newUseDbLocalStr
+		}
+	}
 	logLevel := defaultLogLevel
 	newLogLevel := os.Getenv("LOG_LEVEL")
 	if newLogLevel != "" {
@@ -140,7 +147,7 @@ func configure(args []string) (*config, error) {
 	}
 
 	dbPath := dbFile
-	if platform == "prod" {
+	if !useDbLocal {
 		dbPath = fmt.Sprintf("%s?authToken=%s", dbURL, dbAuthToken)
 	}
 
