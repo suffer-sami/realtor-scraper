@@ -54,24 +54,24 @@ func (cfg *config) storeAgent(agent Agent) error {
 
 			dbAgent, err = qtx.CreateAgent(ctx, database.CreateAgentParams{
 				ID:                   agent.ID,
-				FirstName:            toNullString(agent.FirstName),
-				LastName:             toNullString(agent.LastName),
-				NickName:             toNullString(agent.NickName),
-				PersonName:           toNullString(agent.PersonName),
-				Title:                toNullString(agent.Title),
-				Slogan:               toNullString(agent.Slogan),
-				Email:                toNullString(agent.Email),
-				AgentRating:          toNullInt(agent.AgentRating),
-				Description:          toNullString(agent.Description),
-				RecommendationsCount: toNullInt(agent.RecommendationsCount),
-				ReviewCount:          toNullInt(agent.ReviewCount),
+				FirstName:            stringToNullString(agent.FirstName),
+				LastName:             stringToNullString(agent.LastName),
+				NickName:             stringToNullString(agent.NickName),
+				PersonName:           stringToNullString(agent.PersonName),
+				Title:                stringToNullString(agent.Title),
+				Slogan:               stringToNullString(agent.Slogan),
+				Email:                stringToNullString(agent.Email),
+				AgentRating:          intToNullInt64(agent.AgentRating),
+				Description:          stringToNullString(agent.Description),
+				RecommendationsCount: intToNullInt64(agent.RecommendationsCount),
+				ReviewCount:          intToNullInt64(agent.ReviewCount),
 				LastUpdated:          strToNullTime(agent.LastUpdated, time.RFC1123),
 				FirstMonth:           numericToNullInt(agent.FirstMonth),
-				FirstYear:            toNullInt(agent.AgentRating),
-				Photo:                toNullString(agent.Photo.Href),
-				Video:                toNullString(agent.Video),
-				WebUrl:               toNullString(agent.WebURL),
-				Href:                 toNullString(agent.Href),
+				FirstYear:            intToNullInt64(agent.AgentRating),
+				Photo:                stringToNullString(agent.Photo.Href),
+				Video:                stringToNullString(agent.Video),
+				ProfileUrl:           stringToNullString(agent.WebURL),
+				Website:              stringToNullString(agent.Href),
 			})
 
 			if err != nil {
@@ -80,24 +80,24 @@ func (cfg *config) storeAgent(agent Agent) error {
 
 			if cfg.saveRawAgents {
 				cfg.logger.Debugf("- raw agent:")
-				if jsonStrAgent, err := toJsonString(agent); err == nil {
+				if jsonStrAgent, err := anyToJsonString(agent); err == nil {
 					cfg.logger.Debugf("	* %s", jsonStrAgent)
 					if err := qtx.CreateRawAgent(ctx, database.CreateRawAgentParams{
-						AgentID: toNullString(dbAgent.ID),
-						Data:    toNullString(jsonStrAgent),
+						AgentID: stringToNullString(dbAgent.ID),
+						Data:    stringToNullString(jsonStrAgent),
 					}); err != nil {
 						cfg.logger.Errorf("error creating raw agent: %v", err)
 					}
 				}
 			}
 		}
-		agentId := toNullString(dbAgent.ID)
+		agentId := stringToNullString(dbAgent.ID)
 
 		cfg.logger.Debugf("- sales data: %s", agent.RecentlySold.LastSoldDate)
 		if err := qtx.CreateSalesData(ctx, database.CreateSalesDataParams{
-			Count:        toNullInt(agent.RecentlySold.Count),
-			Min:          toNullInt(agent.RecentlySold.Min),
-			Max:          toNullInt(agent.RecentlySold.Max),
+			Count:        intToNullInt64(agent.RecentlySold.Count),
+			Min:          intToNullInt64(agent.RecentlySold.Min),
+			Max:          intToNullInt64(agent.RecentlySold.Max),
 			LastSoldDate: strToNullTime(agent.RecentlySold.LastSoldDate, time.DateOnly),
 			AgentID:      agentId,
 		}); err != nil {
@@ -106,9 +106,9 @@ func (cfg *config) storeAgent(agent Agent) error {
 
 		cfg.logger.Debugf("- listing data: %s", agent.ForSalePrice.LastListingDate)
 		if err := qtx.CreateListingsData(ctx, database.CreateListingsDataParams{
-			Count:           toNullInt(agent.ForSalePrice.Count),
-			Min:             toNullInt(agent.ForSalePrice.Min),
-			Max:             toNullInt(agent.ForSalePrice.Max),
+			Count:           intToNullInt64(agent.ForSalePrice.Count),
+			Min:             intToNullInt64(agent.ForSalePrice.Min),
+			Max:             intToNullInt64(agent.ForSalePrice.Max),
 			LastListingDate: timeToNullTime(agent.ForSalePrice.LastListingDate),
 			AgentID:         agentId,
 		}); err != nil {
@@ -119,8 +119,8 @@ func (cfg *config) storeAgent(agent Agent) error {
 		for _, socialMedia := range agent.SocialMedias {
 			cfg.logger.Debugf("	* %s", socialMedia.Type)
 			if err := qtx.CreateSocialMedia(ctx, database.CreateSocialMediaParams{
-				Type:    toNullString(socialMedia.Type),
-				Href:    toNullString(socialMedia.Href),
+				Type:    stringToNullString(socialMedia.Type),
+				Href:    stringToNullString(socialMedia.Href),
 				AgentID: agentId,
 			}); err != nil {
 				cfg.logger.Errorf("error creating social media: %v", err)
@@ -131,9 +131,9 @@ func (cfg *config) storeAgent(agent Agent) error {
 		for _, feedLicense := range agent.FeedLicenses {
 			cfg.logger.Debugf("	* (%s, %s)", feedLicense.StateCode, feedLicense.Country)
 			if err := qtx.CreateFeedLicense(ctx, database.CreateFeedLicenseParams{
-				Country:       toNullString(feedLicense.Country),
-				LicenseNumber: toNullString(feedLicense.LicenseNumber),
-				StateCode:     toNullString(feedLicense.StateCode),
+				Country:       stringToNullString(feedLicense.Country),
+				LicenseNumber: stringToNullString(feedLicense.LicenseNumber),
+				StateCode:     stringToNullString(feedLicense.StateCode),
 				AgentID:       agentId,
 			}); err != nil {
 				cfg.logger.Errorf("error creating feed licence: %v", err)
@@ -144,10 +144,10 @@ func (cfg *config) storeAgent(agent Agent) error {
 		for _, mls := range agent.Mls {
 			cfg.logger.Debugf("	* %s", mls.Abbreviation)
 			dbMls, err := qtx.GetMultipleListingService(ctx, database.GetMultipleListingServiceParams{
-				Abbreviation:  toNullString(mls.Abbreviation),
-				Type:          toNullString(mls.Type),
-				MemberID:      toNullString(mls.MemberID),
-				LicenseNumber: toNullString(mls.LicenseNumber),
+				Abbreviation:  stringToNullString(mls.Abbreviation),
+				Type:          stringToNullString(mls.Type),
+				MemberID:      stringToNullString(mls.MemberID),
+				LicenseNumber: stringToNullString(mls.LicenseNumber),
 			})
 
 			if err != nil {
@@ -155,11 +155,11 @@ func (cfg *config) storeAgent(agent Agent) error {
 					return err
 				}
 				dbMls, err = qtx.CreateMultipleListingService(ctx, database.CreateMultipleListingServiceParams{
-					Abbreviation:  toNullString(mls.Abbreviation),
-					LicenseNumber: toNullString(mls.LicenseNumber),
-					Type:          toNullString(mls.Type),
-					MemberID:      toNullString(mls.MemberID),
-					IsPrimary:     toNullBool(mls.Primary),
+					Abbreviation:  stringToNullString(mls.Abbreviation),
+					LicenseNumber: stringToNullString(mls.LicenseNumber),
+					Type:          stringToNullString(mls.Type),
+					MemberID:      stringToNullString(mls.MemberID),
+					IsPrimary:     boolToNullBool(mls.Primary),
 				})
 
 				if err != nil {
@@ -169,7 +169,7 @@ func (cfg *config) storeAgent(agent Agent) error {
 
 			if err := qtx.CreateAgentMultipleListingService(ctx, database.CreateAgentMultipleListingServiceParams{
 				AgentID:                  agentId,
-				MultipleListingServiceID: toNullInt64(dbMls.ID),
+				MultipleListingServiceID: int64ToNullInt64(dbMls.ID),
 			}); err != nil {
 				cfg.logger.Errorf("error creating agent mls: %v", err)
 			}
@@ -178,10 +178,10 @@ func (cfg *config) storeAgent(agent Agent) error {
 		for _, mls := range agent.MlsHistory {
 			cfg.logger.Debugf("	* %s", mls.Abbreviation)
 			dbMls, err := qtx.GetMultipleListingService(ctx, database.GetMultipleListingServiceParams{
-				Abbreviation:  toNullString(mls.Abbreviation),
-				Type:          toNullString(mls.Type),
-				MemberID:      toNullString(mls.Member.ID),
-				LicenseNumber: toNullString(mls.LicenseNumber),
+				Abbreviation:  stringToNullString(mls.Abbreviation),
+				Type:          stringToNullString(mls.Type),
+				MemberID:      stringToNullString(mls.Member.ID),
+				LicenseNumber: stringToNullString(mls.LicenseNumber),
 			})
 
 			if err != nil {
@@ -189,12 +189,12 @@ func (cfg *config) storeAgent(agent Agent) error {
 					return err
 				}
 				dbMls, err = qtx.CreateMultipleListingService(ctx, database.CreateMultipleListingServiceParams{
-					Abbreviation:     toNullString(mls.Abbreviation),
+					Abbreviation:     stringToNullString(mls.Abbreviation),
 					InactivationDate: timeToNullTime(mls.InactivationDate),
-					LicenseNumber:    toNullString(mls.LicenseNumber),
-					IsPrimary:        toNullBool(mls.Primary),
-					Type:             toNullString(mls.Type),
-					MemberID:         toNullString(mls.Member.ID),
+					LicenseNumber:    stringToNullString(mls.LicenseNumber),
+					IsPrimary:        boolToNullBool(mls.Primary),
+					Type:             stringToNullString(mls.Type),
+					MemberID:         stringToNullString(mls.Member.ID),
 				})
 
 				if err != nil {
@@ -214,7 +214,7 @@ func (cfg *config) storeAgent(agent Agent) error {
 
 			if err = qtx.CreateAgentMultipleListingService(ctx, database.CreateAgentMultipleListingServiceParams{
 				AgentID:                  agentId,
-				MultipleListingServiceID: toNullInt64(dbMls.ID),
+				MultipleListingServiceID: int64ToNullInt64(dbMls.ID),
 			}); err != nil {
 				cfg.logger.Errorf("error creating agent mls: %v", err)
 			}
@@ -223,20 +223,20 @@ func (cfg *config) storeAgent(agent Agent) error {
 		cfg.logger.Debugf("- languages:")
 		for _, lang := range agent.Languages {
 			cfg.logger.Debugf("	* %s", lang)
-			dbLang, err := qtx.GetLanguage(ctx, toNullString(lang))
+			dbLangID, err := qtx.GetLanguageID(ctx, stringToNullString(lang))
 			if err != nil {
 				if err != sql.ErrNoRows {
 					return err
 				}
 
-				dbLang, err = qtx.CreateLanguage(ctx, toNullString(lang))
+				dbLangID, err = qtx.CreateLanguage(ctx, stringToNullString(lang))
 				if err != nil {
 					return err
 				}
 			}
 
 			if err := qtx.CreateAgentLanguage(ctx, database.CreateAgentLanguageParams{
-				LanguageID: toNullInt64(dbLang.ID),
+				LanguageID: int64ToNullInt64(dbLangID),
 				AgentID:    agentId,
 			}); err != nil {
 				cfg.logger.Errorf("error creating agent language: %v", err)
@@ -245,20 +245,20 @@ func (cfg *config) storeAgent(agent Agent) error {
 		cfg.logger.Debugf("- user languages:")
 		for _, lang := range agent.UserLanguages {
 			cfg.logger.Debugf("	* %s", lang)
-			dbLang, err := qtx.GetLanguage(ctx, toNullString(lang))
+			dbLangID, err := qtx.GetLanguageID(ctx, stringToNullString(lang))
 			if err != nil {
 				if err != sql.ErrNoRows {
 					return err
 				}
 
-				dbLang, err = qtx.CreateLanguage(ctx, toNullString(lang))
+				dbLangID, err = qtx.CreateLanguage(ctx, stringToNullString(lang))
 				if err != nil {
 					return err
 				}
 			}
 
 			if err := qtx.CreateAgentUserLanguage(ctx, database.CreateAgentUserLanguageParams{
-				LanguageID: toNullInt64(dbLang.ID),
+				LanguageID: int64ToNullInt64(dbLangID),
 				AgentID:    agentId,
 			}); err != nil {
 				cfg.logger.Errorf("error creating agent language: %v", err)
@@ -268,20 +268,20 @@ func (cfg *config) storeAgent(agent Agent) error {
 		cfg.logger.Debugf("- zips:")
 		for _, zip := range agent.Zips {
 			cfg.logger.Debugf("	* %s", zip)
-			dbZip, err := qtx.GetZip(ctx, toNullString(zip))
+			dbZipID, err := qtx.GetZipID(ctx, stringToNullString(zip))
 			if err != nil {
 				if err != sql.ErrNoRows {
 					return err
 				}
 
-				dbZip, err = qtx.CreateZip(ctx, toNullString(zip))
+				dbZipID, err = qtx.CreateZip(ctx, stringToNullString(zip))
 				if err != nil {
 					return err
 				}
 			}
 
 			if err := qtx.CreateAgentZip(ctx, database.CreateAgentZipParams{
-				ZipID:   toNullInt64(dbZip.ID),
+				ZipID:   int64ToNullInt64(dbZipID),
 				AgentID: agentId,
 			}); err != nil {
 				cfg.logger.Errorf("error creating agent zip: %v", err)
@@ -291,9 +291,9 @@ func (cfg *config) storeAgent(agent Agent) error {
 		cfg.logger.Debugf("- areas:")
 		for _, area := range agent.ServedAreas {
 			cfg.logger.Debugf("	* (%s, %s)", area.Name, area.StateCode)
-			dbArea, err := qtx.GetArea(ctx, database.GetAreaParams{
-				Name:      toNullString(area.Name),
-				StateCode: toNullString(area.StateCode),
+			dbAreaID, err := qtx.GetAreaID(ctx, database.GetAreaIDParams{
+				Name:      stringToNullString(area.Name),
+				StateCode: stringToNullString(area.StateCode),
 			})
 
 			if err != nil {
@@ -301,9 +301,9 @@ func (cfg *config) storeAgent(agent Agent) error {
 					return err
 				}
 
-				dbArea, err = qtx.CreateArea(ctx, database.CreateAreaParams{
-					Name:      toNullString(area.Name),
-					StateCode: toNullString(area.StateCode),
+				dbAreaID, err = qtx.CreateArea(ctx, database.CreateAreaParams{
+					Name:      stringToNullString(area.Name),
+					StateCode: stringToNullString(area.StateCode),
 				})
 				if err != nil {
 					return err
@@ -311,7 +311,7 @@ func (cfg *config) storeAgent(agent Agent) error {
 			}
 
 			if err := qtx.CreateAgentServedArea(ctx, database.CreateAgentServedAreaParams{
-				AreaID:  toNullInt64(dbArea.ID),
+				AreaID:  int64ToNullInt64(dbAreaID),
 				AgentID: agentId,
 			}); err != nil {
 				cfg.logger.Errorf("error creating agent served area: %v", err)
@@ -320,9 +320,9 @@ func (cfg *config) storeAgent(agent Agent) error {
 		cfg.logger.Debugf("- marketing areas:")
 		for _, area := range agent.MarketingAreaCities {
 			cfg.logger.Debugf("	* (%s, %s)", area.Name, area.StateCode)
-			dbArea, err := qtx.GetArea(ctx, database.GetAreaParams{
-				Name:      toNullString(area.Name),
-				StateCode: toNullString(area.StateCode),
+			dbAreaID, err := qtx.GetAreaID(ctx, database.GetAreaIDParams{
+				Name:      stringToNullString(area.Name),
+				StateCode: stringToNullString(area.StateCode),
 			})
 
 			if err != nil {
@@ -330,9 +330,9 @@ func (cfg *config) storeAgent(agent Agent) error {
 					return err
 				}
 
-				dbArea, err = qtx.CreateArea(ctx, database.CreateAreaParams{
-					Name:      toNullString(area.Name),
-					StateCode: toNullString(area.StateCode),
+				dbAreaID, err = qtx.CreateArea(ctx, database.CreateAreaParams{
+					Name:      stringToNullString(area.Name),
+					StateCode: stringToNullString(area.StateCode),
 				})
 				if err != nil {
 					return err
@@ -340,7 +340,7 @@ func (cfg *config) storeAgent(agent Agent) error {
 			}
 
 			if err := qtx.CreateAgentMarketingArea(ctx, database.CreateAgentMarketingAreaParams{
-				AreaID:  toNullInt64(dbArea.ID),
+				AreaID:  int64ToNullInt64(dbAreaID),
 				AgentID: agentId,
 			}); err != nil {
 				cfg.logger.Errorf("error creating agent marketing area: %v", err)
@@ -350,20 +350,20 @@ func (cfg *config) storeAgent(agent Agent) error {
 		cfg.logger.Debugf("- designations:")
 		for _, designation := range agent.Designations {
 			cfg.logger.Debugf("	* %s", designation.Name)
-			dbDesignation, err := qtx.GetDesignation(ctx, toNullString(designation.Name))
+			dbDesignationID, err := qtx.GetDesignationID(ctx, stringToNullString(designation.Name))
 			if err != nil {
 				if err != sql.ErrNoRows {
 					return err
 				}
 
-				dbDesignation, err = qtx.CreateDesignation(ctx, toNullString(designation.Name))
+				dbDesignationID, err = qtx.CreateDesignation(ctx, stringToNullString(designation.Name))
 				if err != nil {
 					return err
 				}
 			}
 
 			if err := qtx.CreateAgentDesignation(ctx, database.CreateAgentDesignationParams{
-				DesignationID: toNullInt64(dbDesignation.ID),
+				DesignationID: int64ToNullInt64(dbDesignationID),
 				AgentID:       agentId,
 			}); err != nil {
 				cfg.logger.Errorf("error creating agent designation: %v", err)
@@ -372,20 +372,20 @@ func (cfg *config) storeAgent(agent Agent) error {
 		cfg.logger.Debugf("- specializations:")
 		for _, specialization := range agent.Specializations {
 			cfg.logger.Debugf("	* %s", specialization.Name)
-			dbSpecialization, err := qtx.GetSpecialization(ctx, toNullString(specialization.Name))
+			dbSpecializationID, err := qtx.GetSpecializationID(ctx, stringToNullString(specialization.Name))
 			if err != nil {
 				if err != sql.ErrNoRows {
 					return err
 				}
 
-				dbSpecialization, err = qtx.CreateSpecialization(ctx, toNullString(specialization.Name))
+				dbSpecializationID, err = qtx.CreateSpecialization(ctx, stringToNullString(specialization.Name))
 				if err != nil {
 					return err
 				}
 			}
 
 			if err := qtx.CreateAgentSpecialization(ctx, database.CreateAgentSpecializationParams{
-				SpecializationID: toNullInt64(dbSpecialization.ID),
+				SpecializationID: int64ToNullInt64(dbSpecializationID),
 				AgentID:          agentId,
 			}); err != nil {
 				cfg.logger.Errorf("error creating agent specialization: %v", err)
@@ -393,17 +393,18 @@ func (cfg *config) storeAgent(agent Agent) error {
 		}
 
 		cfg.logger.Debugf("- broker:")
-		dbBroker, err := qtx.GetBroker(ctx, toNullInt(agent.Broker.FulfillmentID))
+		cfg.logger.Debugf("	* %s", agent.Broker.Name)
+		dbBrokerID, err := qtx.GetBrokerID(ctx, intToNullInt64(agent.Broker.FulfillmentID))
 		if err != nil {
 			if err != sql.ErrNoRows {
 				return err
 			}
 
-			dbBroker, err = qtx.CreateBroker(ctx, database.CreateBrokerParams{
-				FulfillmentID: toNullInt(agent.Broker.FulfillmentID),
-				Name:          toNullString(agent.Broker.Name),
-				Photo:         toNullString(agent.Broker.Photo.Href),
-				Video:         toNullString(agent.Broker.Video),
+			dbBrokerID, err = qtx.CreateBroker(ctx, database.CreateBrokerParams{
+				FulfillmentID: intToNullInt64(agent.Broker.FulfillmentID),
+				Name:          stringToNullString(agent.Broker.Name),
+				Photo:         stringToNullString(agent.Broker.Photo.Href),
+				Video:         stringToNullString(agent.Broker.Video),
 			})
 
 			if err != nil {
@@ -411,13 +412,98 @@ func (cfg *config) storeAgent(agent Agent) error {
 			}
 		}
 
-		if err := qtx.CreateBrokerAgent(ctx, database.CreateBrokerAgentParams{
-			BrokerID: toNullInt64(dbBroker.ID),
-			AgentID:  agentId,
-		}); err != nil {
-			cfg.logger.Errorf("error creating broker agent: %v", err)
+		cfg.logger.Debugf("- address:")
+		cfg.logger.Debugf("	* %v", agent.Address)
+		dbAddressID, err := qtx.GetAddressID(ctx, database.GetAddressIDParams{
+			Line:       stringToNullString(agent.Address.Line),
+			Line2:      stringToNullString(agent.Address.Line2),
+			City:       stringToNullString(agent.Address.City),
+			StateCode:  stringToNullString(agent.Address.StateCode),
+			PostalCode: stringToNullString(agent.Address.PostalCode),
+		})
+		if err != nil {
+			if err != sql.ErrNoRows {
+				return err
+			}
+
+			dbAddressID, err = qtx.CreateAddress(ctx, database.CreateAddressParams{
+				Line:       stringToNullString(agent.Address.Line),
+				Line2:      stringToNullString(agent.Address.Line2),
+				City:       stringToNullString(agent.Address.City),
+				StateCode:  stringToNullString(agent.Address.StateCode),
+				State:      stringToNullString(agent.Address.State),
+				PostalCode: stringToNullString(agent.Address.PostalCode),
+				Country:    stringToNullString(agent.Address.Country),
+			})
+
+			if err != nil {
+				return err
+			}
 		}
 
+		cfg.logger.Debugf("- office address:")
+		cfg.logger.Debugf("	* %v", agent.Office.Address)
+		dbOfficeAddressID, err := qtx.GetAddressID(ctx, database.GetAddressIDParams{
+			Line:       stringToNullString(agent.Address.Line),
+			Line2:      stringToNullString(agent.Address.Line2),
+			City:       stringToNullString(agent.Address.City),
+			StateCode:  stringToNullString(agent.Address.StateCode),
+			PostalCode: stringToNullString(agent.Address.PostalCode),
+		})
+		if err != nil {
+			if err != sql.ErrNoRows {
+				return err
+			}
+
+			dbOfficeAddressID, err = qtx.CreateAddress(ctx, database.CreateAddressParams{
+				Line:       stringToNullString(agent.Address.Line),
+				Line2:      stringToNullString(agent.Address.Line2),
+				City:       stringToNullString(agent.Address.City),
+				StateCode:  stringToNullString(agent.Address.StateCode),
+				State:      stringToNullString(agent.Address.State),
+				PostalCode: stringToNullString(agent.Address.PostalCode),
+				Country:    stringToNullString(agent.Address.Country),
+			})
+
+			if err != nil {
+				return err
+			}
+		}
+
+		cfg.logger.Debugf("- office:")
+		cfg.logger.Debugf("	* %v", agent.Office.Name)
+		dbOfficeID, err := qtx.GetOfficeID(ctx, intToNullInt64(agent.Office.FulfillmentID))
+		if err != nil {
+			if err != sql.ErrNoRows {
+				return err
+			}
+
+			dbOfficeID, err = qtx.CreateOffice(ctx, database.CreateOfficeParams{
+				Name:          stringToNullString(agent.Office.Name),
+				Email:         stringToNullString(agent.Office.Email),
+				Photo:         stringToNullString(agent.Office.Photo.Href),
+				Website:       stringToNullString(agent.Office.Website),
+				Slogan:        stringToNullString(agent.Office.Slogan),
+				Video:         stringToNullString(agent.Office.Video),
+				FulfillmentID: intToNullInt64(agent.Office.FulfillmentID),
+				AddressID:     int64ToNullInt64(dbOfficeAddressID),
+			})
+
+			if err != nil {
+				return err
+			}
+		}
+
+		cfg.logger.Debugf("- agent foreign keys:")
+		cfg.logger.Debugf("	* Agent: (AddressID: %d, BrokerID: %d, OfficeID: %d)", dbAddressID, dbBrokerID, dbOfficeID)
+		if err := qtx.UpdateAgentForeignKeys(ctx, database.UpdateAgentForeignKeysParams{
+			AddressID: int64ToNullInt64(dbAddressID),
+			BrokerID:  int64ToNullInt64(dbBrokerID),
+			OfficeID:  int64ToNullInt64(dbOfficeID),
+			ID:        agent.ID,
+		}); err != nil {
+			cfg.logger.Errorf("error updating agent foreign keys: %v", err)
+		}
 		return nil
 	})
 }
