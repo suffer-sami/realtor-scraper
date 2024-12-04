@@ -76,6 +76,19 @@ func (cfg *config) storeAgent(agent Agent) error {
 			if err != nil {
 				return err
 			}
+
+			if cfg.saveRawAgents {
+				cfg.logger.Debugf("- raw agent:")
+				if jsonStrAgent, err := toJsonString(agent); err == nil {
+					cfg.logger.Debugf("	* %s", jsonStrAgent)
+					if err := qtx.CreateRawAgent(ctx, database.CreateRawAgentParams{
+						AgentID: toNullString(dbAgent.ID),
+						Data:    toNullString(jsonStrAgent),
+					}); err != nil {
+						cfg.logger.Errorf("error creating raw agent: %v", err)
+					}
+				}
+			}
 		}
 		agentId := toNullString(dbAgent.ID)
 

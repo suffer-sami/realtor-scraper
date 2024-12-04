@@ -116,6 +116,12 @@ type MultipleListingService struct {
 	IsPrimary        sql.NullBool
 }
 
+type RawAgent struct {
+	ID      int64
+	Data    sql.NullString
+	AgentID sql.NullString
+}
+
 type Request struct {
 	ID             int64
 	CreatedAt      time.Time

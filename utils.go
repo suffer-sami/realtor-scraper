@@ -4,12 +4,23 @@ import (
 	"database/sql"
 	"strings"
 	"time"
+
+	"github.com/goccy/go-json"
 )
 
 // Converts a string to sql.NullString
 func toNullString(s string) sql.NullString {
 	s = strings.TrimSpace(s)
 	return sql.NullString{String: s, Valid: s != ""}
+}
+
+// Converts any object to json string
+func toJsonString(o any) (string, error) {
+	data, err := json.Marshal(o)
+	if err != nil {
+		return "", err
+	}
+	return string(data), nil
 }
 
 // Converts an int to sql.NullInt64

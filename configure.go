@@ -21,6 +21,7 @@ const (
 	defaultThrottleRequestLimit = 5
 	defaultThrottleTimeout      = 5 * time.Second
 	defaultUseDbLocal           = true
+	defaultSaveRawAgents        = false
 	defaultLoggerPrefix         = "realtor-scraper"
 	defaultLogLevel             = "INFO"
 )
@@ -30,6 +31,7 @@ type config struct {
 	db                   *sql.DB
 	dbQueries            database.Queries
 	requests             map[int]Request
+	saveRawAgents        bool
 	throttleRequestLimit int
 	logger               logger.Logger
 	platform             string
@@ -131,6 +133,12 @@ func configure(args []string) (*config, error) {
 			useDbLocal = newUseDbLocalStr
 		}
 	}
+	saveRawAgents := defaultSaveRawAgents
+	if saveRawAgentsStr := os.Getenv("SAVE_RAW_AGENTS"); saveRawAgentsStr != "" {
+		if newsaveRawAgents, err := strconv.ParseBool(saveRawAgentsStr); err == nil {
+			saveRawAgents = newsaveRawAgents
+		}
+	}
 	logLevel := defaultLogLevel
 	newLogLevel := os.Getenv("LOG_LEVEL")
 	if newLogLevel != "" {
@@ -167,6 +175,7 @@ func configure(args []string) (*config, error) {
 		dbQueries:            *dbQueries,
 		requests:             make(map[int]Request),
 		throttleRequestLimit: throttleRequestLimit,
+		saveRawAgents:        saveRawAgents,
 		logger:               logger.NewLogger(defaultLoggerPrefix, logLevel),
 		platform:             platform,
 		jwtSecret:            jwtSecret,
