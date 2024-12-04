@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"sort"
 	"strconv"
 	"sync"
 	"time"
@@ -15,23 +16,26 @@ import (
 )
 
 const (
-	defaultMaxConcurrency = 3
-	defaultRequestTimeout = 30 * time.Second
-	defaultLoggerPrefix   = "realtor-scraper"
-	defaultLogLevel       = "INFO"
+	defaultMaxConcurrency       = 3
+	defaultRequestTimeout       = 30 * time.Second
+	defaultThrottleRequestLimit = 5
+	defaultThrottleTimeout      = 5 * time.Second
+	defaultLoggerPrefix         = "realtor-scraper"
+	defaultLogLevel             = "INFO"
 )
 
 type config struct {
-	client             *http.Client
-	db                 *sql.DB
-	dbQueries          database.Queries
-	requests           map[int]Request
-	logger             logger.Logger
-	platform           string
-	jwtSecret          string
-	mu                 *sync.Mutex
-	concurrencyControl chan struct{}
-	wg                 *sync.WaitGroup
+	client               *http.Client
+	db                   *sql.DB
+	dbQueries            database.Queries
+	requests             map[int]Request
+	throttleRequestLimit int
+	logger               logger.Logger
+	platform             string
+	jwtSecret            string
+	mu                   *sync.Mutex
+	concurrencyControl   chan struct{}
+	wg                   *sync.WaitGroup
 }
 
 func (cfg *config) getRemainingRequests() (remaining []int, isComplete bool) {
@@ -44,6 +48,7 @@ func (cfg *config) getRemainingRequests() (remaining []int, isComplete bool) {
 			remainingKeys = append(remainingKeys, key)
 		}
 	}
+	sort.Ints(remainingKeys)
 	return remainingKeys, len(remainingKeys) == 0
 }
 
@@ -124,6 +129,15 @@ func configure(args []string) (*config, error) {
 	if newLogLevel != "" {
 		logLevel = newLogLevel
 	}
+	throttleRequestLimit := defaultThrottleRequestLimit
+	if newThrottleReqLimitStr := os.Getenv("THROTTLE_REQUEST_LIMIT"); newThrottleReqLimitStr != "" {
+		newLimit, err := strconv.Atoi(newThrottleReqLimitStr)
+		if err == nil && newLimit > 0 {
+			throttleRequestLimit = newLimit
+		} else {
+			return nil, fmt.Errorf("invalid THROTTLE_REQUEST_LIMIT: %v", err)
+		}
+	}
 
 	dbPath := dbFile
 	if platform == "prod" {
@@ -142,14 +156,15 @@ func configure(args []string) (*config, error) {
 			MaxIdleConnsPerHost: defaultMaxConcurrency,
 			IdleConnTimeout:     10 * time.Second,
 		}},
-		db:                 db,
-		dbQueries:          *dbQueries,
-		requests:           make(map[int]Request),
-		logger:             logger.NewLogger(defaultLoggerPrefix, logLevel),
-		platform:           platform,
-		jwtSecret:          jwtSecret,
-		mu:                 &sync.Mutex{},
-		concurrencyControl: make(chan struct{}, maxConcurrency),
-		wg:                 &sync.WaitGroup{},
+		db:                   db,
+		dbQueries:            *dbQueries,
+		requests:             make(map[int]Request),
+		throttleRequestLimit: throttleRequestLimit,
+		logger:               logger.NewLogger(defaultLoggerPrefix, logLevel),
+		platform:             platform,
+		jwtSecret:            jwtSecret,
+		mu:                   &sync.Mutex{},
+		concurrencyControl:   make(chan struct{}, maxConcurrency),
+		wg:                   &sync.WaitGroup{},
 	}, nil
 }
