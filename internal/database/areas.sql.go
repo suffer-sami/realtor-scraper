@@ -17,7 +17,7 @@ VALUES (
     ?
 )
 ON CONFLICT(name, state_code) DO NOTHING
-RETURNING id, name, state_code
+RETURNING id
 `
 
 type CreateAreaParams struct {
@@ -25,27 +25,27 @@ type CreateAreaParams struct {
 	StateCode sql.NullString
 }
 
-func (q *Queries) CreateArea(ctx context.Context, arg CreateAreaParams) (Area, error) {
+func (q *Queries) CreateArea(ctx context.Context, arg CreateAreaParams) (int64, error) {
 	row := q.db.QueryRowContext(ctx, createArea, arg.Name, arg.StateCode)
-	var i Area
-	err := row.Scan(&i.ID, &i.Name, &i.StateCode)
-	return i, err
+	var id int64
+	err := row.Scan(&id)
+	return id, err
 }
 
-const getArea = `-- name: GetArea :one
-SELECT id, name, state_code FROM areas
+const getAreaID = `-- name: GetAreaID :one
+SELECT id FROM areas
 WHERE name = ? AND state_code = ?
 LIMIT 1
 `
 
-type GetAreaParams struct {
+type GetAreaIDParams struct {
 	Name      sql.NullString
 	StateCode sql.NullString
 }
 
-func (q *Queries) GetArea(ctx context.Context, arg GetAreaParams) (Area, error) {
-	row := q.db.QueryRowContext(ctx, getArea, arg.Name, arg.StateCode)
-	var i Area
-	err := row.Scan(&i.ID, &i.Name, &i.StateCode)
-	return i, err
+func (q *Queries) GetAreaID(ctx context.Context, arg GetAreaIDParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, getAreaID, arg.Name, arg.StateCode)
+	var id int64
+	err := row.Scan(&id)
+	return id, err
 }

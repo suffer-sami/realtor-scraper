@@ -2,9 +2,9 @@
 INSERT INTO zips (zip_code)
 VALUES (?)
 ON CONFLICT(zip_code) DO NOTHING
-RETURNING *;
+RETURNING id;
 
--- name: GetZip :one
-SELECT * FROM zips 
+-- name: GetZipID :one
+SELECT id FROM zips 
 WHERE zip_code = ? 
 LIMIT 1;

@@ -2,9 +2,9 @@
 INSERT INTO languages (name)
 VALUES (?)
 ON CONFLICT(name) DO NOTHING
-RETURNING *;
+RETURNING id;
 
--- name: GetLanguage :one
-SELECT * FROM languages 
+-- name: GetLanguageID :one
+SELECT id FROM languages 
 WHERE name = ? 
 LIMIT 1;

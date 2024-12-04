@@ -14,25 +14,25 @@ const createLanguage = `-- name: CreateLanguage :one
 INSERT INTO languages (name)
 VALUES (?)
 ON CONFLICT(name) DO NOTHING
-RETURNING id, name
+RETURNING id
 `
 
-func (q *Queries) CreateLanguage(ctx context.Context, name sql.NullString) (Language, error) {
+func (q *Queries) CreateLanguage(ctx context.Context, name sql.NullString) (int64, error) {
 	row := q.db.QueryRowContext(ctx, createLanguage, name)
-	var i Language
-	err := row.Scan(&i.ID, &i.Name)
-	return i, err
+	var id int64
+	err := row.Scan(&id)
+	return id, err
 }
 
-const getLanguage = `-- name: GetLanguage :one
-SELECT id, name FROM languages 
+const getLanguageID = `-- name: GetLanguageID :one
+SELECT id FROM languages 
 WHERE name = ? 
 LIMIT 1
 `
 
-func (q *Queries) GetLanguage(ctx context.Context, name sql.NullString) (Language, error) {
-	row := q.db.QueryRowContext(ctx, getLanguage, name)
-	var i Language
-	err := row.Scan(&i.ID, &i.Name)
-	return i, err
+func (q *Queries) GetLanguageID(ctx context.Context, name sql.NullString) (int64, error) {
+	row := q.db.QueryRowContext(ctx, getLanguageID, name)
+	var id int64
+	err := row.Scan(&id)
+	return id, err
 }

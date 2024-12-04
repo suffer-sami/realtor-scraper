@@ -5,9 +5,9 @@ VALUES (
     ?
 )
 ON CONFLICT(name, state_code) DO NOTHING
-RETURNING *;
+RETURNING id;
 
--- name: GetArea :one
-SELECT * FROM areas
+-- name: GetAreaID :one
+SELECT id FROM areas
 WHERE name = ? AND state_code = ?
 LIMIT 1;

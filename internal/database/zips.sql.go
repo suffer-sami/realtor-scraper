@@ -14,25 +14,25 @@ const createZip = `-- name: CreateZip :one
 INSERT INTO zips (zip_code)
 VALUES (?)
 ON CONFLICT(zip_code) DO NOTHING
-RETURNING id, zip_code
+RETURNING id
 `
 
-func (q *Queries) CreateZip(ctx context.Context, zipCode sql.NullString) (Zip, error) {
+func (q *Queries) CreateZip(ctx context.Context, zipCode sql.NullString) (int64, error) {
 	row := q.db.QueryRowContext(ctx, createZip, zipCode)
-	var i Zip
-	err := row.Scan(&i.ID, &i.ZipCode)
-	return i, err
+	var id int64
+	err := row.Scan(&id)
+	return id, err
 }
 
-const getZip = `-- name: GetZip :one
-SELECT id, zip_code FROM zips 
+const getZipID = `-- name: GetZipID :one
+SELECT id FROM zips 
 WHERE zip_code = ? 
 LIMIT 1
 `
 
-func (q *Queries) GetZip(ctx context.Context, zipCode sql.NullString) (Zip, error) {
-	row := q.db.QueryRowContext(ctx, getZip, zipCode)
-	var i Zip
-	err := row.Scan(&i.ID, &i.ZipCode)
-	return i, err
+func (q *Queries) GetZipID(ctx context.Context, zipCode sql.NullString) (int64, error) {
+	row := q.db.QueryRowContext(ctx, getZipID, zipCode)
+	var id int64
+	err := row.Scan(&id)
+	return id, err
 }
