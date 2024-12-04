@@ -10,7 +10,7 @@ import (
 	"database/sql"
 )
 
-const createFeedLicense = `-- name: CreateFeedLicense :one
+const createFeedLicense = `-- name: CreateFeedLicense :exec
 INSERT INTO feed_licenses (agent_id, country, state_code, license_number)
 VALUES (
     ?,
@@ -18,9 +18,7 @@ VALUES (
     ?,
     ?
 )
-ON CONFLICT(agent_id, country, state_code, license_number) 
-    DO NOTHING
-RETURNING id, country, license_number, state_code, agent_id
+ON CONFLICT(agent_id, country, state_code, license_number) DO NOTHING
 `
 
 type CreateFeedLicenseParams struct {
@@ -30,20 +28,12 @@ type CreateFeedLicenseParams struct {
 	LicenseNumber sql.NullString
 }
 
-func (q *Queries) CreateFeedLicense(ctx context.Context, arg CreateFeedLicenseParams) (FeedLicense, error) {
-	row := q.db.QueryRowContext(ctx, createFeedLicense,
+func (q *Queries) CreateFeedLicense(ctx context.Context, arg CreateFeedLicenseParams) error {
+	_, err := q.db.ExecContext(ctx, createFeedLicense,
 		arg.AgentID,
 		arg.Country,
 		arg.StateCode,
 		arg.LicenseNumber,
 	)
-	var i FeedLicense
-	err := row.Scan(
-		&i.ID,
-		&i.Country,
-		&i.LicenseNumber,
-		&i.StateCode,
-		&i.AgentID,
-	)
-	return i, err
+	return err
 }

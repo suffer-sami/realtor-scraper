@@ -10,7 +10,7 @@ import (
 	"database/sql"
 )
 
-const createSocialMedia = `-- name: CreateSocialMedia :one
+const createSocialMedia = `-- name: CreateSocialMedia :exec
 INSERT INTO social_medias (type, href, agent_id)
 VALUES (
     ?,
@@ -18,7 +18,6 @@ VALUES (
     ?
 )
 ON CONFLICT (agent_id, href) DO NOTHING
-RETURNING id, type, href, agent_id
 `
 
 type CreateSocialMediaParams struct {
@@ -27,14 +26,7 @@ type CreateSocialMediaParams struct {
 	AgentID sql.NullString
 }
 
-func (q *Queries) CreateSocialMedia(ctx context.Context, arg CreateSocialMediaParams) (SocialMedia, error) {
-	row := q.db.QueryRowContext(ctx, createSocialMedia, arg.Type, arg.Href, arg.AgentID)
-	var i SocialMedia
-	err := row.Scan(
-		&i.ID,
-		&i.Type,
-		&i.Href,
-		&i.AgentID,
-	)
-	return i, err
+func (q *Queries) CreateSocialMedia(ctx context.Context, arg CreateSocialMediaParams) error {
+	_, err := q.db.ExecContext(ctx, createSocialMedia, arg.Type, arg.Href, arg.AgentID)
+	return err
 }

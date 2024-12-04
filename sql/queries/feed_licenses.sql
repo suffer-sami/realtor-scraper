@@ -1,4 +1,4 @@
--- name: CreateFeedLicense :one
+-- name: CreateFeedLicense :exec
 INSERT INTO feed_licenses (agent_id, country, state_code, license_number)
 VALUES (
     ?,
@@ -6,6 +6,4 @@ VALUES (
     ?,
     ?
 )
-ON CONFLICT(agent_id, country, state_code, license_number) 
-    DO NOTHING
-RETURNING *;
+ON CONFLICT(agent_id, country, state_code, license_number) DO NOTHING;
