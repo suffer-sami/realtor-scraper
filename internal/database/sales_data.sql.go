@@ -25,7 +25,7 @@ DO UPDATE SET
     min = EXCLUDED.min,
     max = EXCLUDED.max,
     last_sold_date = EXCLUDED.last_sold_date
-RETURNING id, count, min, max, agent_id, last_sold_date
+RETURNING id, count, min, max, last_sold_date, agent_id, "constraint"
 `
 
 type CreateSalesDataParams struct {
@@ -50,8 +50,9 @@ func (q *Queries) CreateSalesData(ctx context.Context, arg CreateSalesDataParams
 		&i.Count,
 		&i.Min,
 		&i.Max,
-		&i.AgentID,
 		&i.LastSoldDate,
+		&i.AgentID,
+		&i.Constraint,
 	)
 	return i, err
 }

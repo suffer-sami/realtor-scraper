@@ -103,6 +103,7 @@ type ListingsDatum struct {
 	Max             sql.NullInt64
 	LastListingDate sql.NullTime
 	AgentID         sql.NullString
+	Constraint      interface{}
 }
 
 type MultipleListingService struct {
@@ -128,8 +129,9 @@ type SalesDatum struct {
 	Count        sql.NullInt64
 	Min          sql.NullInt64
 	Max          sql.NullInt64
-	AgentID      sql.NullString
 	LastSoldDate sql.NullTime
+	AgentID      sql.NullString
+	Constraint   interface{}
 }
 
 type SocialMedia struct {
