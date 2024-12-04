@@ -67,6 +67,11 @@ type AgentMultipleListingService struct {
 	MultipleListingServiceID sql.NullInt64
 }
 
+type AgentPhone struct {
+	AgentID  sql.NullString
+	PhonesID sql.NullInt64
+}
+
 type AgentServedArea struct {
 	AgentID sql.NullString
 	AreaID  sql.NullInt64
@@ -149,6 +154,19 @@ type Office struct {
 	Video         sql.NullString
 	FulfillmentID sql.NullInt64
 	AddressID     sql.NullInt64
+}
+
+type OfficePhone struct {
+	OfficeID sql.NullInt64
+	PhonesID sql.NullInt64
+}
+
+type Phone struct {
+	ID      int64
+	Ext     sql.NullString
+	Number  sql.NullString
+	Type    sql.NullString
+	IsValid sql.NullBool
 }
 
 type RawAgent struct {

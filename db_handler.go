@@ -413,7 +413,7 @@ func (cfg *config) storeAgent(agent Agent) error {
 		}
 
 		cfg.logger.Debugf("- address:")
-		cfg.logger.Debugf("	* %v", agent.Address)
+		cfg.logger.Debugf("	* %+v", agent.Address)
 		dbAddressID, err := qtx.GetAddressID(ctx, database.GetAddressIDParams{
 			Line:       stringToNullString(agent.Address.Line),
 			Line2:      stringToNullString(agent.Address.Line2),
@@ -442,7 +442,7 @@ func (cfg *config) storeAgent(agent Agent) error {
 		}
 
 		cfg.logger.Debugf("- office address:")
-		cfg.logger.Debugf("	* %v", agent.Office.Address)
+		cfg.logger.Debugf("	* %+v", agent.Office.Address)
 		dbOfficeAddressID, err := qtx.GetAddressID(ctx, database.GetAddressIDParams{
 			Line:       stringToNullString(agent.Address.Line),
 			Line2:      stringToNullString(agent.Address.Line2),
@@ -491,6 +491,84 @@ func (cfg *config) storeAgent(agent Agent) error {
 
 			if err != nil {
 				return err
+			}
+		}
+
+		cfg.logger.Debugf("- phones:")
+		for _, phone := range agent.Phones {
+			cfg.logger.Debugf("	* %s", phone.Number)
+
+			dbPhoneID, err := qtx.GetPhoneID(ctx, database.GetPhoneIDParams{
+				Ext:    stringToNullString(phone.Ext),
+				Number: stringToNullString(phone.Number),
+				Type:   stringToNullString(phone.Type),
+			})
+
+			if err != nil {
+				if err != sql.ErrNoRows {
+					return err
+				}
+
+				dbPhoneID, err = qtx.CreatePhone(ctx, database.CreatePhoneParams{
+					Ext:     stringToNullString(phone.Ext),
+					Number:  stringToNullString(phone.Number),
+					Type:    stringToNullString(phone.Type),
+					IsValid: boolToNullBool(phone.IsValid),
+				})
+
+				if err != nil {
+					return err
+				}
+			}
+
+			if err := qtx.CreateAgentPhone(ctx, database.CreateAgentPhoneParams{
+				PhonesID: int64ToNullInt64(dbPhoneID),
+				AgentID:  agentId,
+			}); err != nil {
+				cfg.logger.Errorf("error creating agent phone: %v", err)
+			}
+		}
+
+		cfg.logger.Debugf("- office phones:")
+		officePhones := make([]Phone, 0, len(agent.Office.Phones)+len(agent.Office.PhoneList))
+
+		officePhones = append(officePhones, agent.Phones...)
+
+		for _, officePh := range agent.Office.PhoneList {
+			officePhones = append(officePhones, officePh)
+		}
+
+		for _, phone := range officePhones {
+			cfg.logger.Debugf("	* %+v", phone)
+
+			dbPhoneID, err := qtx.GetPhoneID(ctx, database.GetPhoneIDParams{
+				Ext:    stringToNullString(phone.Ext),
+				Number: stringToNullString(phone.Number),
+				Type:   stringToNullString(phone.Type),
+			})
+
+			if err != nil {
+				if err != sql.ErrNoRows {
+					return err
+				}
+
+				dbPhoneID, err = qtx.CreatePhone(ctx, database.CreatePhoneParams{
+					Ext:     stringToNullString(phone.Ext),
+					Number:  stringToNullString(phone.Number),
+					Type:    stringToNullString(phone.Type),
+					IsValid: boolToNullBool(phone.IsValid),
+				})
+
+				if err != nil {
+					return err
+				}
+			}
+
+			if err := qtx.CreateOfficePhone(ctx, database.CreateOfficePhoneParams{
+				PhonesID: int64ToNullInt64(dbPhoneID),
+				OfficeID: int64ToNullInt64(dbOfficeID),
+			}); err != nil {
+				cfg.logger.Errorf("error creating office phone: %v", err)
 			}
 		}
 
