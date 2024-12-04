@@ -129,14 +129,25 @@ func (cfg *config) storeAgent(agent Agent) error {
 
 		cfg.logger.Debugf("- feed licences:")
 		for _, feedLicense := range agent.FeedLicenses {
+			if feedLicense.IsZero() {
+				continue
+			}
 			cfg.logger.Debugf("	* (%s, %s)", feedLicense.StateCode, feedLicense.Country)
-			if err := qtx.CreateFeedLicense(ctx, database.CreateFeedLicenseParams{
+			dbFeedLicenseID, err := qtx.CreateFeedLicense(ctx, database.CreateFeedLicenseParams{
 				Country:       stringToNullString(feedLicense.Country),
 				LicenseNumber: stringToNullString(feedLicense.LicenseNumber),
 				StateCode:     stringToNullString(feedLicense.StateCode),
+			})
+
+			if err != nil {
+				return err
+			}
+
+			if err := qtx.CreateAgentFeedLicense(ctx, database.CreateAgentFeedLicenseParams{
+				FeedLicenseID: int64ToNullInt64(dbFeedLicenseID),
 				AgentID:       agentId,
 			}); err != nil {
-				cfg.logger.Errorf("error creating feed licence: %v", err)
+				cfg.logger.Errorf("error creating feed license: %v", err)
 			}
 		}
 
@@ -461,8 +472,8 @@ func (cfg *config) storeAgent(agent Agent) error {
 			}
 
 			if err := qtx.CreateAgentPhone(ctx, database.CreateAgentPhoneParams{
-				PhonesID: int64ToNullInt64(dbPhoneID),
-				AgentID:  agentId,
+				PhoneID: int64ToNullInt64(dbPhoneID),
+				AgentID: agentId,
 			}); err != nil {
 				cfg.logger.Errorf("error creating agent phone: %v", err)
 			}
@@ -597,10 +608,38 @@ func (cfg *config) storeAgent(agent Agent) error {
 				}
 
 				if err := qtx.CreateOfficePhone(ctx, database.CreateOfficePhoneParams{
-					PhonesID: int64ToNullInt64(dbPhoneID),
+					PhoneID:  int64ToNullInt64(dbPhoneID),
 					OfficeID: int64ToNullInt64(dbOfficeID),
 				}); err != nil {
 					cfg.logger.Errorf("error creating office phone: %v", err)
+				}
+			}
+
+			officeFeedLicenses := make([]FeedLicense, 0, len(agent.Office.FeedLicenses)+len(agent.Office.Licenses))
+			officeFeedLicenses = append(officeFeedLicenses, agent.Office.FeedLicenses...)
+			officeFeedLicenses = append(officeFeedLicenses, agent.Office.Licenses...)
+
+			cfg.logger.Debugf("- office feed licences:")
+			for _, feedLicense := range officeFeedLicenses {
+				if feedLicense.IsZero() {
+					continue
+				}
+				cfg.logger.Debugf("	* (%s, %s)", feedLicense.StateCode, feedLicense.Country)
+				dbFeedLicenseID, err := qtx.CreateFeedLicense(ctx, database.CreateFeedLicenseParams{
+					Country:       stringToNullString(feedLicense.Country),
+					LicenseNumber: stringToNullString(feedLicense.LicenseNumber),
+					StateCode:     stringToNullString(feedLicense.StateCode),
+				})
+
+				if err != nil {
+					return err
+				}
+
+				if err := qtx.CreateOfficeFeedLicense(ctx, database.CreateOfficeFeedLicenseParams{
+					FeedLicenseID: int64ToNullInt64(dbFeedLicenseID),
+					OfficeID:      int64ToNullInt64(dbOfficeID),
+				}); err != nil {
+					cfg.logger.Errorf("error creating office feed license: %v", err)
 				}
 			}
 		}

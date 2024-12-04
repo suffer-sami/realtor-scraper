@@ -194,6 +194,10 @@ type FeedLicense struct {
 	StateCode     string `json:"state_code"`
 }
 
+func (f FeedLicense) IsZero() bool {
+	return f.Country == "" && f.LicenseNumber == "" && f.StateCode == ""
+}
+
 type PriceStats struct {
 	Count int `json:"count"`
 	Max   int `json:"max"`
