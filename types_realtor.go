@@ -136,6 +136,12 @@ type Address struct {
 	StateCode  string `json:"state_code"`
 }
 
+func (a Address) IsZero() bool {
+	return a.City == "" && a.Country == "" && a.Line == "" &&
+		a.Line2 == "" && a.PostalCode == "" &&
+		a.State == "" && a.StateCode == ""
+}
+
 type Photo struct {
 	Href     string `json:"href"`
 	IsZoomed bool   `json:"is_zoomed"`
@@ -148,6 +154,12 @@ type Broker struct {
 	Name          string        `json:"name"`
 	Photo         Photo         `json:"photo"`
 	Video         string        `json:"video"`
+}
+
+func (b Broker) IsZero() bool {
+	return b.Name == "" && b.AccentColor == "" &&
+		len(b.Designations) == 0 && b.FulfillmentID == 0 &&
+		b.Photo.Href == "" && b.Video == ""
 }
 
 type Designation struct {
@@ -218,6 +230,10 @@ type Phone struct {
 	IsValid bool   `json:"is_valid"`
 }
 
+func (p Phone) IsZero() bool {
+	return p.Ext == "" && p.Number == "" && p.Type == ""
+}
+
 type Office struct {
 	Name          string           `json:"name"`
 	Address       Address          `json:"address"`
@@ -232,6 +248,16 @@ type Office struct {
 	NrdsID        string           `json:"nrds_id"`
 	FulfillmentID int              `json:"fulfillment_id"`
 	Licenses      []FeedLicense    `json:"licenses"`
+}
+
+func (o Office) IsZero() bool {
+	return o.Name == "" && o.Address.IsZero() &&
+		len(o.Phones) == 0 && len(o.PhoneList) == 0 &&
+		o.Photo.Href == "" && o.Website == "" &&
+		len(o.FeedLicenses) == 0 && o.Email == "" &&
+		o.Slogan == "" && o.Video == "" &&
+		o.NrdsID == "" && o.FulfillmentID == 0 &&
+		len(o.Licenses) == 0
 }
 
 type SocialMedia struct {
