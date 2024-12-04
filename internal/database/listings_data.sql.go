@@ -10,7 +10,7 @@ import (
 	"database/sql"
 )
 
-const createListingsData = `-- name: CreateListingsData :one
+const createListingsData = `-- name: CreateListingsData :exec
 INSERT INTO listings_data (count, min, max, last_listing_date, agent_id)
 VALUES (
     ?,
@@ -25,7 +25,6 @@ DO UPDATE SET
     min = EXCLUDED.min,
     max = EXCLUDED.max,
     last_listing_date = EXCLUDED.last_listing_date
-RETURNING id, count, min, max, last_listing_date, agent_id, "constraint"
 `
 
 type CreateListingsDataParams struct {
@@ -36,23 +35,13 @@ type CreateListingsDataParams struct {
 	AgentID         sql.NullString
 }
 
-func (q *Queries) CreateListingsData(ctx context.Context, arg CreateListingsDataParams) (ListingsDatum, error) {
-	row := q.db.QueryRowContext(ctx, createListingsData,
+func (q *Queries) CreateListingsData(ctx context.Context, arg CreateListingsDataParams) error {
+	_, err := q.db.ExecContext(ctx, createListingsData,
 		arg.Count,
 		arg.Min,
 		arg.Max,
 		arg.LastListingDate,
 		arg.AgentID,
 	)
-	var i ListingsDatum
-	err := row.Scan(
-		&i.ID,
-		&i.Count,
-		&i.Min,
-		&i.Max,
-		&i.LastListingDate,
-		&i.AgentID,
-		&i.Constraint,
-	)
-	return i, err
+	return err
 }
