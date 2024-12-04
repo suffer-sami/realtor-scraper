@@ -31,8 +31,8 @@ INSERT INTO agents (
     first_year,
     photo,
     video,
-    web_url,
-    href
+    profile_url,
+    website
 )
 VALUES (
     ?, -- id
@@ -54,10 +54,10 @@ VALUES (
     ?, -- first_year
     ?, -- photo
     ?, -- video
-    ?, -- web_url
-    ?  -- href
+    ?, -- profile_url
+    ?  -- website
 )
-RETURNING id, created_at, updated_at, first_name, last_name, nick_name, person_name, title, slogan, email, agent_rating, description, recommendations_count, review_count, last_updated, first_month, first_year, video, web_url, href, photo
+RETURNING id, created_at, updated_at, profile_url, first_name, last_name, nick_name, person_name, title, slogan, email, description, video, photo, website, agent_rating, recommendations_count, review_count, first_month, first_year, last_updated, address_id, broker_id, office_id
 `
 
 type CreateAgentParams struct {
@@ -78,8 +78,8 @@ type CreateAgentParams struct {
 	FirstYear            sql.NullInt64
 	Photo                sql.NullString
 	Video                sql.NullString
-	WebUrl               sql.NullString
-	Href                 sql.NullString
+	ProfileUrl           sql.NullString
+	Website              sql.NullString
 }
 
 func (q *Queries) CreateAgent(ctx context.Context, arg CreateAgentParams) (Agent, error) {
@@ -101,14 +101,15 @@ func (q *Queries) CreateAgent(ctx context.Context, arg CreateAgentParams) (Agent
 		arg.FirstYear,
 		arg.Photo,
 		arg.Video,
-		arg.WebUrl,
-		arg.Href,
+		arg.ProfileUrl,
+		arg.Website,
 	)
 	var i Agent
 	err := row.Scan(
 		&i.ID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.ProfileUrl,
 		&i.FirstName,
 		&i.LastName,
 		&i.NickName,
@@ -116,23 +117,25 @@ func (q *Queries) CreateAgent(ctx context.Context, arg CreateAgentParams) (Agent
 		&i.Title,
 		&i.Slogan,
 		&i.Email,
-		&i.AgentRating,
 		&i.Description,
+		&i.Video,
+		&i.Photo,
+		&i.Website,
+		&i.AgentRating,
 		&i.RecommendationsCount,
 		&i.ReviewCount,
-		&i.LastUpdated,
 		&i.FirstMonth,
 		&i.FirstYear,
-		&i.Video,
-		&i.WebUrl,
-		&i.Href,
-		&i.Photo,
+		&i.LastUpdated,
+		&i.AddressID,
+		&i.BrokerID,
+		&i.OfficeID,
 	)
 	return i, err
 }
 
 const getAgent = `-- name: GetAgent :one
-SELECT id, created_at, updated_at, first_name, last_name, nick_name, person_name, title, slogan, email, agent_rating, description, recommendations_count, review_count, last_updated, first_month, first_year, video, web_url, href, photo FROM agents WHERE id = ?
+SELECT id, created_at, updated_at, profile_url, first_name, last_name, nick_name, person_name, title, slogan, email, description, video, photo, website, agent_rating, recommendations_count, review_count, first_month, first_year, last_updated, address_id, broker_id, office_id FROM agents WHERE id = ?
 `
 
 func (q *Queries) GetAgent(ctx context.Context, id string) (Agent, error) {
@@ -142,6 +145,7 @@ func (q *Queries) GetAgent(ctx context.Context, id string) (Agent, error) {
 		&i.ID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.ProfileUrl,
 		&i.FirstName,
 		&i.LastName,
 		&i.NickName,
@@ -149,17 +153,45 @@ func (q *Queries) GetAgent(ctx context.Context, id string) (Agent, error) {
 		&i.Title,
 		&i.Slogan,
 		&i.Email,
-		&i.AgentRating,
 		&i.Description,
+		&i.Video,
+		&i.Photo,
+		&i.Website,
+		&i.AgentRating,
 		&i.RecommendationsCount,
 		&i.ReviewCount,
-		&i.LastUpdated,
 		&i.FirstMonth,
 		&i.FirstYear,
-		&i.Video,
-		&i.WebUrl,
-		&i.Href,
-		&i.Photo,
+		&i.LastUpdated,
+		&i.AddressID,
+		&i.BrokerID,
+		&i.OfficeID,
 	)
 	return i, err
+}
+
+const updateAgentForeignKeys = `-- name: UpdateAgentForeignKeys :exec
+UPDATE agents
+SET 
+    address_id = ?,
+    broker_id = ?,
+    office_id = ?
+WHERE id = ?
+`
+
+type UpdateAgentForeignKeysParams struct {
+	AddressID sql.NullInt64
+	BrokerID  sql.NullInt64
+	OfficeID  sql.NullInt64
+	ID        string
+}
+
+func (q *Queries) UpdateAgentForeignKeys(ctx context.Context, arg UpdateAgentForeignKeysParams) error {
+	_, err := q.db.ExecContext(ctx, updateAgentForeignKeys,
+		arg.AddressID,
+		arg.BrokerID,
+		arg.OfficeID,
+		arg.ID,
+	)
+	return err
 }

@@ -19,8 +19,8 @@ INSERT INTO agents (
     first_year,
     photo,
     video,
-    web_url,
-    href
+    profile_url,
+    website
 )
 VALUES (
     ?, -- id
@@ -42,10 +42,19 @@ VALUES (
     ?, -- first_year
     ?, -- photo
     ?, -- video
-    ?, -- web_url
-    ?  -- href
+    ?, -- profile_url
+    ?  -- website
 )
 RETURNING *;
 
 -- name: GetAgent :one
 SELECT * FROM agents WHERE id = ?;
+
+
+-- name: UpdateAgentForeignKeys :exec
+UPDATE agents
+SET 
+    address_id = ?,
+    broker_id = ?,
+    office_id = ?
+WHERE id = ?;
