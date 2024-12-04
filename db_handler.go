@@ -392,110 +392,49 @@ func (cfg *config) storeAgent(agent Agent) error {
 			}
 		}
 
-		cfg.logger.Debugf("- broker:")
-		cfg.logger.Debugf("	* %s", agent.Broker.Name)
-		dbBrokerID, err := qtx.GetBrokerID(ctx, intToNullInt64(agent.Broker.FulfillmentID))
-		if err != nil {
-			if err != sql.ErrNoRows {
-				return err
-			}
-
-			dbBrokerID, err = qtx.CreateBroker(ctx, database.CreateBrokerParams{
-				FulfillmentID: intToNullInt64(agent.Broker.FulfillmentID),
-				Name:          stringToNullString(agent.Broker.Name),
-				Photo:         stringToNullString(agent.Broker.Photo.Href),
-				Video:         stringToNullString(agent.Broker.Video),
-			})
-
-			if err != nil {
-				return err
-			}
-		}
-
 		cfg.logger.Debugf("- address:")
-		cfg.logger.Debugf("	* %+v", agent.Address)
-		dbAddressID, err := qtx.GetAddressID(ctx, database.GetAddressIDParams{
-			Line:       stringToNullString(agent.Address.Line),
-			Line2:      stringToNullString(agent.Address.Line2),
-			City:       stringToNullString(agent.Address.City),
-			StateCode:  stringToNullString(agent.Address.StateCode),
-			PostalCode: stringToNullString(agent.Address.PostalCode),
-		})
-		if err != nil {
-			if err != sql.ErrNoRows {
-				return err
-			}
-
-			dbAddressID, err = qtx.CreateAddress(ctx, database.CreateAddressParams{
+		if !agent.Address.IsZero() {
+			cfg.logger.Debugf("	* %+v", agent.Address)
+			dbAddressID, err := qtx.GetAddressID(ctx, database.GetAddressIDParams{
 				Line:       stringToNullString(agent.Address.Line),
 				Line2:      stringToNullString(agent.Address.Line2),
 				City:       stringToNullString(agent.Address.City),
 				StateCode:  stringToNullString(agent.Address.StateCode),
-				State:      stringToNullString(agent.Address.State),
 				PostalCode: stringToNullString(agent.Address.PostalCode),
-				Country:    stringToNullString(agent.Address.Country),
 			})
-
 			if err != nil {
-				return err
-			}
-		}
+				if err != sql.ErrNoRows {
+					return err
+				}
 
-		cfg.logger.Debugf("- office address:")
-		cfg.logger.Debugf("	* %+v", agent.Office.Address)
-		dbOfficeAddressID, err := qtx.GetAddressID(ctx, database.GetAddressIDParams{
-			Line:       stringToNullString(agent.Address.Line),
-			Line2:      stringToNullString(agent.Address.Line2),
-			City:       stringToNullString(agent.Address.City),
-			StateCode:  stringToNullString(agent.Address.StateCode),
-			PostalCode: stringToNullString(agent.Address.PostalCode),
-		})
-		if err != nil {
-			if err != sql.ErrNoRows {
-				return err
-			}
+				dbAddressID, err = qtx.CreateAddress(ctx, database.CreateAddressParams{
+					Line:       stringToNullString(agent.Address.Line),
+					Line2:      stringToNullString(agent.Address.Line2),
+					City:       stringToNullString(agent.Address.City),
+					StateCode:  stringToNullString(agent.Address.StateCode),
+					State:      stringToNullString(agent.Address.State),
+					PostalCode: stringToNullString(agent.Address.PostalCode),
+					Country:    stringToNullString(agent.Address.Country),
+				})
 
-			dbOfficeAddressID, err = qtx.CreateAddress(ctx, database.CreateAddressParams{
-				Line:       stringToNullString(agent.Address.Line),
-				Line2:      stringToNullString(agent.Address.Line2),
-				City:       stringToNullString(agent.Address.City),
-				StateCode:  stringToNullString(agent.Address.StateCode),
-				State:      stringToNullString(agent.Address.State),
-				PostalCode: stringToNullString(agent.Address.PostalCode),
-				Country:    stringToNullString(agent.Address.Country),
-			})
-
-			if err != nil {
-				return err
-			}
-		}
-
-		cfg.logger.Debugf("- office:")
-		cfg.logger.Debugf("	* %v", agent.Office.Name)
-		dbOfficeID, err := qtx.GetOfficeID(ctx, intToNullInt64(agent.Office.FulfillmentID))
-		if err != nil {
-			if err != sql.ErrNoRows {
-				return err
+				if err != nil {
+					return err
+				}
 			}
 
-			dbOfficeID, err = qtx.CreateOffice(ctx, database.CreateOfficeParams{
-				Name:          stringToNullString(agent.Office.Name),
-				Email:         stringToNullString(agent.Office.Email),
-				Photo:         stringToNullString(agent.Office.Photo.Href),
-				Website:       stringToNullString(agent.Office.Website),
-				Slogan:        stringToNullString(agent.Office.Slogan),
-				Video:         stringToNullString(agent.Office.Video),
-				FulfillmentID: intToNullInt64(agent.Office.FulfillmentID),
-				AddressID:     int64ToNullInt64(dbOfficeAddressID),
-			})
-
-			if err != nil {
-				return err
+			if err := qtx.UpdateAgentAddressID(ctx, database.UpdateAgentAddressIDParams{
+				AddressID: int64ToNullInt64(dbAddressID),
+				ID:        agent.ID,
+			}); err != nil {
+				cfg.logger.Errorf("error updating agent address_id: %v", err)
 			}
 		}
 
 		cfg.logger.Debugf("- phones:")
 		for _, phone := range agent.Phones {
+			if phone.IsZero() {
+				continue
+			}
 			cfg.logger.Debugf("	* %s", phone.Number)
 
 			dbPhoneID, err := qtx.GetPhoneID(ctx, database.GetPhoneIDParams{
@@ -529,34 +468,84 @@ func (cfg *config) storeAgent(agent Agent) error {
 			}
 		}
 
-		cfg.logger.Debugf("- office phones:")
-		officePhones := make([]Phone, 0, len(agent.Office.Phones)+len(agent.Office.PhoneList))
-
-		officePhones = append(officePhones, agent.Phones...)
-
-		for _, officePh := range agent.Office.PhoneList {
-			officePhones = append(officePhones, officePh)
-		}
-
-		for _, phone := range officePhones {
-			cfg.logger.Debugf("	* %+v", phone)
-
-			dbPhoneID, err := qtx.GetPhoneID(ctx, database.GetPhoneIDParams{
-				Ext:    stringToNullString(phone.Ext),
-				Number: stringToNullString(phone.Number),
-				Type:   stringToNullString(phone.Type),
-			})
-
+		cfg.logger.Debugf("- broker:")
+		if !agent.Broker.IsZero() {
+			cfg.logger.Debugf("	* %s", agent.Broker.Name)
+			dbBrokerID, err := qtx.GetBrokerID(ctx, intToNullInt64(agent.Broker.FulfillmentID))
 			if err != nil {
 				if err != sql.ErrNoRows {
 					return err
 				}
 
-				dbPhoneID, err = qtx.CreatePhone(ctx, database.CreatePhoneParams{
-					Ext:     stringToNullString(phone.Ext),
-					Number:  stringToNullString(phone.Number),
-					Type:    stringToNullString(phone.Type),
-					IsValid: boolToNullBool(phone.IsValid),
+				dbBrokerID, err = qtx.CreateBroker(ctx, database.CreateBrokerParams{
+					FulfillmentID: intToNullInt64(agent.Broker.FulfillmentID),
+					Name:          stringToNullString(agent.Broker.Name),
+					Photo:         stringToNullString(agent.Broker.Photo.Href),
+					Video:         stringToNullString(agent.Broker.Video),
+				})
+
+				if err != nil {
+					return err
+				}
+			}
+			if err := qtx.UpdateAgentBrokerID(ctx, database.UpdateAgentBrokerIDParams{
+				BrokerID: int64ToNullInt64(dbBrokerID),
+				ID:       agent.ID,
+			}); err != nil {
+				cfg.logger.Errorf("error updating agent broker_id: %v", err)
+			}
+		}
+
+		if !agent.Office.IsZero() {
+			var dbOfficeAddressID int64
+			cfg.logger.Debugf("- office address:")
+			if !agent.Office.Address.IsZero() {
+				cfg.logger.Debugf("	* %+v", agent.Office.Address)
+				dbOfficeAddressID, err = qtx.GetAddressID(ctx, database.GetAddressIDParams{
+					Line:       stringToNullString(agent.Address.Line),
+					Line2:      stringToNullString(agent.Address.Line2),
+					City:       stringToNullString(agent.Address.City),
+					StateCode:  stringToNullString(agent.Address.StateCode),
+					PostalCode: stringToNullString(agent.Address.PostalCode),
+				})
+				if err != nil {
+					if err != sql.ErrNoRows {
+						return err
+					}
+
+					dbOfficeAddressID, err = qtx.CreateAddress(ctx, database.CreateAddressParams{
+						Line:       stringToNullString(agent.Address.Line),
+						Line2:      stringToNullString(agent.Address.Line2),
+						City:       stringToNullString(agent.Address.City),
+						StateCode:  stringToNullString(agent.Address.StateCode),
+						State:      stringToNullString(agent.Address.State),
+						PostalCode: stringToNullString(agent.Address.PostalCode),
+						Country:    stringToNullString(agent.Address.Country),
+					})
+
+					if err != nil {
+						return err
+					}
+				}
+			}
+
+			cfg.logger.Debugf("- office:")
+			cfg.logger.Debugf("	* %v", agent.Office.Name)
+			dbOfficeID, err := qtx.GetOfficeID(ctx, intToNullInt64(agent.Office.FulfillmentID))
+			if err != nil {
+				if err != sql.ErrNoRows {
+					return err
+				}
+
+				dbOfficeID, err = qtx.CreateOffice(ctx, database.CreateOfficeParams{
+					Name:          stringToNullString(agent.Office.Name),
+					Email:         stringToNullString(agent.Office.Email),
+					Photo:         stringToNullString(agent.Office.Photo.Href),
+					Website:       stringToNullString(agent.Office.Website),
+					Slogan:        stringToNullString(agent.Office.Slogan),
+					Video:         stringToNullString(agent.Office.Video),
+					FulfillmentID: intToNullInt64(agent.Office.FulfillmentID),
+					AddressID:     int64ToNullInt64(dbOfficeAddressID),
 				})
 
 				if err != nil {
@@ -564,23 +553,56 @@ func (cfg *config) storeAgent(agent Agent) error {
 				}
 			}
 
-			if err := qtx.CreateOfficePhone(ctx, database.CreateOfficePhoneParams{
-				PhonesID: int64ToNullInt64(dbPhoneID),
+			if err := qtx.UpdateAgentOfficeID(ctx, database.UpdateAgentOfficeIDParams{
 				OfficeID: int64ToNullInt64(dbOfficeID),
+				ID:       agent.ID,
 			}); err != nil {
-				cfg.logger.Errorf("error creating office phone: %v", err)
+				cfg.logger.Errorf("error updating agent office_id: %v", err)
 			}
-		}
 
-		cfg.logger.Debugf("- agent foreign keys:")
-		cfg.logger.Debugf("	* Agent: (AddressID: %d, BrokerID: %d, OfficeID: %d)", dbAddressID, dbBrokerID, dbOfficeID)
-		if err := qtx.UpdateAgentForeignKeys(ctx, database.UpdateAgentForeignKeysParams{
-			AddressID: int64ToNullInt64(dbAddressID),
-			BrokerID:  int64ToNullInt64(dbBrokerID),
-			OfficeID:  int64ToNullInt64(dbOfficeID),
-			ID:        agent.ID,
-		}); err != nil {
-			cfg.logger.Errorf("error updating agent foreign keys: %v", err)
+			officePhones := make([]Phone, 0, len(agent.Office.Phones)+len(agent.Office.PhoneList))
+			officePhones = append(officePhones, agent.Phones...)
+			for _, officePh := range agent.Office.PhoneList {
+				officePhones = append(officePhones, officePh)
+			}
+
+			cfg.logger.Debugf("- office phones:")
+			for _, phone := range officePhones {
+				if phone.IsZero() {
+					continue
+				}
+				cfg.logger.Debugf("	* %+v", phone)
+
+				dbPhoneID, err := qtx.GetPhoneID(ctx, database.GetPhoneIDParams{
+					Ext:    stringToNullString(phone.Ext),
+					Number: stringToNullString(phone.Number),
+					Type:   stringToNullString(phone.Type),
+				})
+
+				if err != nil {
+					if err != sql.ErrNoRows {
+						return err
+					}
+
+					dbPhoneID, err = qtx.CreatePhone(ctx, database.CreatePhoneParams{
+						Ext:     stringToNullString(phone.Ext),
+						Number:  stringToNullString(phone.Number),
+						Type:    stringToNullString(phone.Type),
+						IsValid: boolToNullBool(phone.IsValid),
+					})
+
+					if err != nil {
+						return err
+					}
+				}
+
+				if err := qtx.CreateOfficePhone(ctx, database.CreateOfficePhoneParams{
+					PhonesID: int64ToNullInt64(dbPhoneID),
+					OfficeID: int64ToNullInt64(dbOfficeID),
+				}); err != nil {
+					cfg.logger.Errorf("error creating office phone: %v", err)
+				}
+			}
 		}
 		return nil
 	})
