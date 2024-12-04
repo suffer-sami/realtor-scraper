@@ -11,20 +11,20 @@ import (
 )
 
 const createOfficePhone = `-- name: CreateOfficePhone :exec
-INSERT INTO office_phones (office_id, phones_id)
+INSERT INTO office_phones (office_id, phone_id)
 VALUES (
     ?,
     ?
 )
-ON CONFLICT(office_id, phones_id) DO NOTHING
+ON CONFLICT(office_id, phone_id) DO NOTHING
 `
 
 type CreateOfficePhoneParams struct {
 	OfficeID sql.NullInt64
-	PhonesID sql.NullInt64
+	PhoneID  sql.NullInt64
 }
 
 func (q *Queries) CreateOfficePhone(ctx context.Context, arg CreateOfficePhoneParams) error {
-	_, err := q.db.ExecContext(ctx, createOfficePhone, arg.OfficeID, arg.PhonesID)
+	_, err := q.db.ExecContext(ctx, createOfficePhone, arg.OfficeID, arg.PhoneID)
 	return err
 }

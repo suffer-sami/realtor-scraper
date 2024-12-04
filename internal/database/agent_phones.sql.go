@@ -11,20 +11,20 @@ import (
 )
 
 const createAgentPhone = `-- name: CreateAgentPhone :exec
-INSERT INTO agent_phones (agent_id, phones_id)
+INSERT INTO agent_phones (agent_id, phone_id)
 VALUES (
     ?,
     ?
 )
-ON CONFLICT(agent_id, phones_id) DO NOTHING
+ON CONFLICT(agent_id, phone_id) DO NOTHING
 `
 
 type CreateAgentPhoneParams struct {
-	AgentID  sql.NullString
-	PhonesID sql.NullInt64
+	AgentID sql.NullString
+	PhoneID sql.NullInt64
 }
 
 func (q *Queries) CreateAgentPhone(ctx context.Context, arg CreateAgentPhoneParams) error {
-	_, err := q.db.ExecContext(ctx, createAgentPhone, arg.AgentID, arg.PhonesID)
+	_, err := q.db.ExecContext(ctx, createAgentPhone, arg.AgentID, arg.PhoneID)
 	return err
 }
