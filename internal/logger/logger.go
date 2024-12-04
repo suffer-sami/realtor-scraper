@@ -19,7 +19,6 @@ const (
 )
 
 type Logger interface {
-	SetLevel(LogLevel)
 	Fatalf(string, ...interface{})
 	Errorf(string, ...interface{})
 	Warnf(string, ...interface{})
@@ -57,12 +56,6 @@ func NewLogger(prefix string, logLevel string) Logger {
 		level:         level,
 		loggingPrefix: prefix,
 	}
-}
-
-func (l *stdDebugLogger) SetLevel(level LogLevel) {
-	l.mu.Lock()
-	defer l.mu.Unlock()
-	l.level = level
 }
 
 func (l *stdDebugLogger) Fatalf(format string, v ...interface{}) {
