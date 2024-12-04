@@ -11,11 +11,14 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/suffer-sami/realtor-scraper/internal/database"
+	"github.com/suffer-sami/realtor-scraper/internal/logger"
 )
 
 const (
 	defaultMaxConcurrency = 3
 	defaultRequestTimeout = 30 * time.Second
+	defaultLoggerPrefix   = "realtor-scraper"
+	defaultLogLevel       = "INFO"
 )
 
 type config struct {
@@ -23,7 +26,7 @@ type config struct {
 	db                 *sql.DB
 	dbQueries          database.Queries
 	requests           map[int]Request
-	logger             Logger
+	logger             logger.Logger
 	platform           string
 	jwtSecret          string
 	mu                 *sync.Mutex
@@ -116,6 +119,11 @@ func configure(args []string) (*config, error) {
 	if jwtSecret == "" {
 		return nil, fmt.Errorf("JWT_SECRET must be set")
 	}
+	logLevel := defaultLogLevel
+	newLogLevel := os.Getenv("LOG_LEVEL")
+	if newLogLevel != "" {
+		logLevel = newLogLevel
+	}
 
 	dbPath := dbFile
 	if platform == "prod" {
@@ -131,14 +139,13 @@ func configure(args []string) (*config, error) {
 
 	return &config{
 		client: &http.Client{Timeout: defaultRequestTimeout, Transport: &http.Transport{
-			DisableKeepAlives:   true,
 			MaxIdleConnsPerHost: defaultMaxConcurrency,
 			IdleConnTimeout:     10 * time.Second,
 		}},
 		db:                 db,
 		dbQueries:          *dbQueries,
 		requests:           make(map[int]Request),
-		logger:             stdDebugLogger{},
+		logger:             logger.NewLogger(defaultLoggerPrefix, logLevel),
 		platform:           platform,
 		jwtSecret:          jwtSecret,
 		mu:                 &sync.Mutex{},

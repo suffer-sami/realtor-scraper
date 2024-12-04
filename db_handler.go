@@ -44,6 +44,8 @@ func (cfg *config) storeAgents(agents []Agent) {
 func (cfg *config) storeAgent(agent Agent) error {
 	defer cfg.wg.Done()
 	return cfg.executeTransaction(context.Background(), func(ctx context.Context, qtx *database.Queries) error {
+		cfg.logger.Infof("Agent: %s", agent.PersonName)
+
 		dbAgent, err := qtx.GetAgent(ctx, agent.ID)
 		if err != nil {
 			if err != sql.ErrNoRows {
@@ -75,47 +77,53 @@ func (cfg *config) storeAgent(agent Agent) error {
 				return err
 			}
 		}
-
 		agentId := toNullString(dbAgent.ID)
-		cfg.logger.Infof("Agent: %s", dbAgent.PersonName.String)
 
 		cfg.logger.Debugf("- sales data: %s", agent.RecentlySold.LastSoldDate)
-		qtx.CreateSalesData(ctx, database.CreateSalesDataParams{
+		if err := qtx.CreateSalesData(ctx, database.CreateSalesDataParams{
 			Count:        toNullInt(agent.RecentlySold.Count),
 			Min:          toNullInt(agent.RecentlySold.Min),
 			Max:          toNullInt(agent.RecentlySold.Max),
 			LastSoldDate: strToNullTime(agent.RecentlySold.LastSoldDate, time.DateOnly),
 			AgentID:      agentId,
-		})
+		}); err != nil {
+			cfg.logger.Errorf("error creating sales data: %v", err)
+		}
 
 		cfg.logger.Debugf("- listing data: %s", agent.ForSalePrice.LastListingDate)
-		qtx.CreateListingsData(ctx, database.CreateListingsDataParams{
+		if err := qtx.CreateListingsData(ctx, database.CreateListingsDataParams{
 			Count:           toNullInt(agent.ForSalePrice.Count),
 			Min:             toNullInt(agent.ForSalePrice.Min),
 			Max:             toNullInt(agent.ForSalePrice.Max),
 			LastListingDate: timeToNullTime(agent.ForSalePrice.LastListingDate),
 			AgentID:         agentId,
-		})
+		}); err != nil {
+			cfg.logger.Errorf("error creating listing data: %v", err)
+		}
 
 		cfg.logger.Debugf("- social medias:")
 		for _, socialMedia := range agent.SocialMedias {
 			cfg.logger.Debugf("	* %s", socialMedia.Type)
-			qtx.CreateSocialMedia(ctx, database.CreateSocialMediaParams{
+			if err := qtx.CreateSocialMedia(ctx, database.CreateSocialMediaParams{
 				Type:    toNullString(socialMedia.Type),
 				Href:    toNullString(socialMedia.Href),
 				AgentID: agentId,
-			})
+			}); err != nil {
+				cfg.logger.Errorf("error creating social media: %v", err)
+			}
 		}
 
 		cfg.logger.Debugf("- feed licences:")
 		for _, feedLicense := range agent.FeedLicenses {
 			cfg.logger.Debugf("	* (%s, %s)", feedLicense.StateCode, feedLicense.Country)
-			qtx.CreateFeedLicense(ctx, database.CreateFeedLicenseParams{
+			if err := qtx.CreateFeedLicense(ctx, database.CreateFeedLicenseParams{
 				Country:       toNullString(feedLicense.Country),
 				LicenseNumber: toNullString(feedLicense.LicenseNumber),
 				StateCode:     toNullString(feedLicense.StateCode),
 				AgentID:       agentId,
-			})
+			}); err != nil {
+				cfg.logger.Errorf("error creating feed licence: %v", err)
+			}
 		}
 
 		cfg.logger.Debugf("- mls:")
@@ -145,12 +153,11 @@ func (cfg *config) storeAgent(agent Agent) error {
 				}
 			}
 
-			err = qtx.CreateAgentMultipleListingService(ctx, database.CreateAgentMultipleListingServiceParams{
+			if err := qtx.CreateAgentMultipleListingService(ctx, database.CreateAgentMultipleListingServiceParams{
 				AgentID:                  agentId,
 				MultipleListingServiceID: toNullInt64(dbMls.ID),
-			})
-			if err != nil {
-				return err
+			}); err != nil {
+				cfg.logger.Errorf("error creating agent mls: %v", err)
 			}
 		}
 		cfg.logger.Debugf("- mls history:")
@@ -183,18 +190,19 @@ func (cfg *config) storeAgent(agent Agent) error {
 
 			if dbMls.InactivationDate.Time != mls.InactivationDate {
 				cfg.logger.Debugf("	* %s (update inactivation_date: %v)", mls.Abbreviation, mls.InactivationDate)
-				qtx.UpdateMultipleListingServiceInactivationDate(ctx, database.UpdateMultipleListingServiceInactivationDateParams{
+				if err := qtx.UpdateMultipleListingServiceInactivationDate(ctx, database.UpdateMultipleListingServiceInactivationDateParams{
 					InactivationDate: dbMls.InactivationDate,
 					ID:               dbMls.ID,
-				})
+				}); err != nil {
+					cfg.logger.Errorf("error (update mls inactivation_date: %v)", err)
+				}
 			}
 
-			err = qtx.CreateAgentMultipleListingService(ctx, database.CreateAgentMultipleListingServiceParams{
+			if err = qtx.CreateAgentMultipleListingService(ctx, database.CreateAgentMultipleListingServiceParams{
 				AgentID:                  agentId,
 				MultipleListingServiceID: toNullInt64(dbMls.ID),
-			})
-			if err != nil {
-				return err
+			}); err != nil {
+				cfg.logger.Errorf("error creating agent mls: %v", err)
 			}
 		}
 
@@ -213,10 +221,12 @@ func (cfg *config) storeAgent(agent Agent) error {
 				}
 			}
 
-			qtx.CreateAgentLanguage(ctx, database.CreateAgentLanguageParams{
+			if err := qtx.CreateAgentLanguage(ctx, database.CreateAgentLanguageParams{
 				LanguageID: toNullInt64(dbLang.ID),
 				AgentID:    agentId,
-			})
+			}); err != nil {
+				cfg.logger.Errorf("error creating agent language: %v", err)
+			}
 		}
 		cfg.logger.Debugf("- user languages:")
 		for _, lang := range agent.UserLanguages {
@@ -233,10 +243,12 @@ func (cfg *config) storeAgent(agent Agent) error {
 				}
 			}
 
-			qtx.CreateAgentUserLanguage(ctx, database.CreateAgentUserLanguageParams{
+			if err := qtx.CreateAgentUserLanguage(ctx, database.CreateAgentUserLanguageParams{
 				LanguageID: toNullInt64(dbLang.ID),
 				AgentID:    agentId,
-			})
+			}); err != nil {
+				cfg.logger.Errorf("error creating agent language: %v", err)
+			}
 		}
 
 		cfg.logger.Debugf("- zips:")
@@ -254,10 +266,12 @@ func (cfg *config) storeAgent(agent Agent) error {
 				}
 			}
 
-			qtx.CreateAgentZip(ctx, database.CreateAgentZipParams{
+			if err := qtx.CreateAgentZip(ctx, database.CreateAgentZipParams{
 				ZipID:   toNullInt64(dbZip.ID),
 				AgentID: agentId,
-			})
+			}); err != nil {
+				cfg.logger.Errorf("error creating agent zip: %v", err)
+			}
 		}
 
 		cfg.logger.Debugf("- areas:")
@@ -282,10 +296,12 @@ func (cfg *config) storeAgent(agent Agent) error {
 				}
 			}
 
-			qtx.CreateAgentServedArea(ctx, database.CreateAgentServedAreaParams{
+			if err := qtx.CreateAgentServedArea(ctx, database.CreateAgentServedAreaParams{
 				AreaID:  toNullInt64(dbArea.ID),
 				AgentID: agentId,
-			})
+			}); err != nil {
+				cfg.logger.Errorf("error creating agent served area: %v", err)
+			}
 		}
 		cfg.logger.Debugf("- marketing areas:")
 		for _, area := range agent.MarketingAreaCities {
@@ -309,10 +325,12 @@ func (cfg *config) storeAgent(agent Agent) error {
 				}
 			}
 
-			qtx.CreateAgentMarketingArea(ctx, database.CreateAgentMarketingAreaParams{
+			if err := qtx.CreateAgentMarketingArea(ctx, database.CreateAgentMarketingAreaParams{
 				AreaID:  toNullInt64(dbArea.ID),
 				AgentID: agentId,
-			})
+			}); err != nil {
+				cfg.logger.Errorf("error creating agent marketing area: %v", err)
+			}
 		}
 
 		cfg.logger.Debugf("- designations:")
@@ -330,10 +348,12 @@ func (cfg *config) storeAgent(agent Agent) error {
 				}
 			}
 
-			qtx.CreateAgentDesignation(ctx, database.CreateAgentDesignationParams{
+			if err := qtx.CreateAgentDesignation(ctx, database.CreateAgentDesignationParams{
 				DesignationID: toNullInt64(dbDesignation.ID),
 				AgentID:       agentId,
-			})
+			}); err != nil {
+				cfg.logger.Errorf("error creating agent designation: %v", err)
+			}
 		}
 		cfg.logger.Debugf("- specializations:")
 		for _, specialization := range agent.Specializations {
@@ -350,10 +370,12 @@ func (cfg *config) storeAgent(agent Agent) error {
 				}
 			}
 
-			qtx.CreateAgentSpecialization(ctx, database.CreateAgentSpecializationParams{
+			if err := qtx.CreateAgentSpecialization(ctx, database.CreateAgentSpecializationParams{
 				SpecializationID: toNullInt64(dbSpecialization.ID),
 				AgentID:          agentId,
-			})
+			}); err != nil {
+				cfg.logger.Errorf("error creating agent specialization: %v", err)
+			}
 		}
 		return nil
 	})
