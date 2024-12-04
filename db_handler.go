@@ -68,6 +68,7 @@ func (cfg *config) storeAgent(agent Agent) error {
 				LastUpdated:          strToNullTime(agent.LastUpdated, time.RFC1123),
 				FirstMonth:           numericToNullInt(agent.FirstMonth),
 				FirstYear:            toNullInt(agent.AgentRating),
+				Photo:                toNullString(agent.Photo.Href),
 				Video:                toNullString(agent.Video),
 				WebUrl:               toNullString(agent.WebURL),
 				Href:                 toNullString(agent.Href),
@@ -390,6 +391,33 @@ func (cfg *config) storeAgent(agent Agent) error {
 				cfg.logger.Errorf("error creating agent specialization: %v", err)
 			}
 		}
+
+		cfg.logger.Debugf("- broker:")
+		dbBroker, err := qtx.GetBroker(ctx, toNullInt(agent.Broker.FulfillmentID))
+		if err != nil {
+			if err != sql.ErrNoRows {
+				return err
+			}
+
+			dbBroker, err = qtx.CreateBroker(ctx, database.CreateBrokerParams{
+				FulfillmentID: toNullInt(agent.Broker.FulfillmentID),
+				Name:          toNullString(agent.Broker.Name),
+				Photo:         toNullString(agent.Broker.Photo.Href),
+				Video:         toNullString(agent.Broker.Video),
+			})
+
+			if err != nil {
+				return err
+			}
+		}
+
+		if err := qtx.CreateBrokerAgent(ctx, database.CreateBrokerAgentParams{
+			BrokerID: toNullInt64(dbBroker.ID),
+			AgentID:  agentId,
+		}); err != nil {
+			cfg.logger.Errorf("error creating broker agent: %v", err)
+		}
+
 		return nil
 	})
 }

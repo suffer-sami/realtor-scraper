@@ -30,6 +30,7 @@ type Agent struct {
 	Video                sql.NullString
 	WebUrl               sql.NullString
 	Href                 sql.NullString
+	Photo                sql.NullString
 }
 
 type AgentDesignation struct {
@@ -76,6 +77,19 @@ type Area struct {
 	ID        int64
 	Name      sql.NullString
 	StateCode sql.NullString
+}
+
+type Broker struct {
+	ID            int64
+	FulfillmentID sql.NullInt64
+	Name          sql.NullString
+	Photo         sql.NullString
+	Video         sql.NullString
+}
+
+type BrokerAgent struct {
+	BrokerID sql.NullInt64
+	AgentID  sql.NullString
 }
 
 type Designation struct {
