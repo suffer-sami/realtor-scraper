@@ -17,6 +17,7 @@ INSERT INTO agents (
     last_updated,
     first_month,
     first_year,
+    photo,
     video,
     web_url,
     href
@@ -39,6 +40,7 @@ VALUES (
     ?, -- last_updated
     ?, -- first_month
     ?, -- first_year
+    ?, -- photo
     ?, -- video
     ?, -- web_url
     ?  -- href

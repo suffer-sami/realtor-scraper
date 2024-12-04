@@ -29,6 +29,7 @@ INSERT INTO agents (
     last_updated,
     first_month,
     first_year,
+    photo,
     video,
     web_url,
     href
@@ -51,11 +52,12 @@ VALUES (
     ?, -- last_updated
     ?, -- first_month
     ?, -- first_year
+    ?, -- photo
     ?, -- video
     ?, -- web_url
     ?  -- href
 )
-RETURNING id, created_at, updated_at, first_name, last_name, nick_name, person_name, title, slogan, email, agent_rating, description, recommendations_count, review_count, last_updated, first_month, first_year, video, web_url, href
+RETURNING id, created_at, updated_at, first_name, last_name, nick_name, person_name, title, slogan, email, agent_rating, description, recommendations_count, review_count, last_updated, first_month, first_year, video, web_url, href, photo
 `
 
 type CreateAgentParams struct {
@@ -74,6 +76,7 @@ type CreateAgentParams struct {
 	LastUpdated          sql.NullTime
 	FirstMonth           sql.NullInt64
 	FirstYear            sql.NullInt64
+	Photo                sql.NullString
 	Video                sql.NullString
 	WebUrl               sql.NullString
 	Href                 sql.NullString
@@ -96,6 +99,7 @@ func (q *Queries) CreateAgent(ctx context.Context, arg CreateAgentParams) (Agent
 		arg.LastUpdated,
 		arg.FirstMonth,
 		arg.FirstYear,
+		arg.Photo,
 		arg.Video,
 		arg.WebUrl,
 		arg.Href,
@@ -122,12 +126,13 @@ func (q *Queries) CreateAgent(ctx context.Context, arg CreateAgentParams) (Agent
 		&i.Video,
 		&i.WebUrl,
 		&i.Href,
+		&i.Photo,
 	)
 	return i, err
 }
 
 const getAgent = `-- name: GetAgent :one
-SELECT id, created_at, updated_at, first_name, last_name, nick_name, person_name, title, slogan, email, agent_rating, description, recommendations_count, review_count, last_updated, first_month, first_year, video, web_url, href FROM agents WHERE id = ?
+SELECT id, created_at, updated_at, first_name, last_name, nick_name, person_name, title, slogan, email, agent_rating, description, recommendations_count, review_count, last_updated, first_month, first_year, video, web_url, href, photo FROM agents WHERE id = ?
 `
 
 func (q *Queries) GetAgent(ctx context.Context, id string) (Agent, error) {
@@ -154,6 +159,7 @@ func (q *Queries) GetAgent(ctx context.Context, id string) (Agent, error) {
 		&i.Video,
 		&i.WebUrl,
 		&i.Href,
+		&i.Photo,
 	)
 	return i, err
 }
