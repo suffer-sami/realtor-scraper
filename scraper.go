@@ -44,6 +44,7 @@ func getRequestParams(offset, resultsPerPage int) SearchRequestParams {
 	}
 }
 
+// processRequest processes a given request and store the fetched agents
 func (cfg *config) processRequest(request Request) {
 	cfg.concurrencyControl <- struct{}{}
 	defer func() {
