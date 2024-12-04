@@ -52,6 +52,11 @@ type AgentDesignation struct {
 	DesignationID sql.NullInt64
 }
 
+type AgentFeedLicense struct {
+	AgentID       sql.NullString
+	FeedLicenseID sql.NullInt64
+}
+
 type AgentLanguage struct {
 	AgentID    sql.NullString
 	LanguageID sql.NullInt64
@@ -68,8 +73,8 @@ type AgentMultipleListingService struct {
 }
 
 type AgentPhone struct {
-	AgentID  sql.NullString
-	PhonesID sql.NullInt64
+	AgentID sql.NullString
+	PhoneID sql.NullInt64
 }
 
 type AgentServedArea struct {
@@ -116,7 +121,6 @@ type FeedLicense struct {
 	Country       sql.NullString
 	LicenseNumber sql.NullString
 	StateCode     sql.NullString
-	AgentID       sql.NullString
 }
 
 type Language struct {
@@ -156,9 +160,14 @@ type Office struct {
 	AddressID     sql.NullInt64
 }
 
+type OfficeFeedLicense struct {
+	OfficeID      sql.NullInt64
+	FeedLicenseID sql.NullInt64
+}
+
 type OfficePhone struct {
 	OfficeID sql.NullInt64
-	PhonesID sql.NullInt64
+	PhoneID  sql.NullInt64
 }
 
 type Phone struct {
