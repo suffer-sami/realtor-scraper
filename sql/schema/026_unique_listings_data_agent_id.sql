@@ -27,7 +27,7 @@ CREATE TABLE new_listings_data (
     count INTEGER,
     min INTEGER,
     max INTEGER,
-    listings_data DATETIME,
+    last_listing_date DATETIME,
     agent_id TEXT,
     CONSTRAINT fk_agents 
         FOREIGN KEY (agent_id) 
