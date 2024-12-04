@@ -10,30 +10,28 @@ import (
 	"database/sql"
 )
 
-const createFeedLicense = `-- name: CreateFeedLicense :exec
-INSERT INTO feed_licenses (agent_id, country, state_code, license_number)
+const createFeedLicense = `-- name: CreateFeedLicense :one
+INSERT INTO feed_licenses (country, state_code, license_number)
 VALUES (
-    ?,
     ?,
     ?,
     ?
 )
-ON CONFLICT(agent_id, country, state_code, license_number) DO NOTHING
+ON CONFLICT(country, state_code, license_number) 
+DO UPDATE SET
+    license_number = EXCLUDED.license_number
+RETURNING id
 `
 
 type CreateFeedLicenseParams struct {
-	AgentID       sql.NullString
 	Country       sql.NullString
 	StateCode     sql.NullString
 	LicenseNumber sql.NullString
 }
 
-func (q *Queries) CreateFeedLicense(ctx context.Context, arg CreateFeedLicenseParams) error {
-	_, err := q.db.ExecContext(ctx, createFeedLicense,
-		arg.AgentID,
-		arg.Country,
-		arg.StateCode,
-		arg.LicenseNumber,
-	)
-	return err
+func (q *Queries) CreateFeedLicense(ctx context.Context, arg CreateFeedLicenseParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, createFeedLicense, arg.Country, arg.StateCode, arg.LicenseNumber)
+	var id int64
+	err := row.Scan(&id)
+	return id, err
 }
