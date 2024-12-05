@@ -7,6 +7,7 @@ import (
 	"os"
 	"sort"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -103,22 +104,10 @@ func configure(args []string) (*config, error) {
 		if newMaxConcurrency, err := strconv.Atoi(args[0]); err == nil {
 			maxConcurrency = newMaxConcurrency
 		} else {
-			return nil, fmt.Errorf("invalid maxConcurrency: %v", err)
+			return nil, fmt.Errorf("invalid maxConcurrency: %w", err)
 		}
 	}
 
-	dbURL := os.Getenv("DB_URL")
-	if dbURL == "" {
-		return nil, fmt.Errorf("DB_URL must be set")
-	}
-	dbAuthToken := os.Getenv("DB_AUTH_TOKEN")
-	if dbAuthToken == "" {
-		return nil, fmt.Errorf("DB_AUTH_TOKEN must be set")
-	}
-	dbFile := os.Getenv("DB_FILE")
-	if dbFile == "" {
-		return nil, fmt.Errorf("DB_FILE must be set")
-	}
 	platform := os.Getenv("PLATFORM")
 	if platform == "" {
 		return nil, fmt.Errorf("PLATFORM must be set")
@@ -127,12 +116,7 @@ func configure(args []string) (*config, error) {
 	if jwtSecret == "" {
 		return nil, fmt.Errorf("JWT_SECRET must be set")
 	}
-	useDbLocal := defaultUseDbLocal
-	if useDbLocalStr := os.Getenv("USE_DB_LOCAL"); useDbLocalStr != "" {
-		if newUseDbLocalStr, err := strconv.ParseBool(useDbLocalStr); err == nil {
-			useDbLocal = newUseDbLocalStr
-		}
-	}
+
 	saveRawAgents := defaultSaveRawAgents
 	if saveRawAgentsStr := os.Getenv("SAVE_RAW_AGENTS"); saveRawAgentsStr != "" {
 		if newsaveRawAgents, err := strconv.ParseBool(saveRawAgentsStr); err == nil {
@@ -150,18 +134,43 @@ func configure(args []string) (*config, error) {
 		if err == nil && newLimit > 0 {
 			throttleRequestLimit = newLimit
 		} else {
-			return nil, fmt.Errorf("invalid THROTTLE_REQUEST_LIMIT: %v", err)
+			return nil, fmt.Errorf("invalid THROTTLE_REQUEST_LIMIT: %w", err)
 		}
 	}
 
-	dbPath := dbFile
-	if !useDbLocal {
+	useDbLocal := defaultUseDbLocal
+	if useDbLocalStr := os.Getenv("USE_DB_LOCAL"); useDbLocalStr != "" {
+		if newUseDbLocalStr, err := strconv.ParseBool(useDbLocalStr); err == nil {
+			useDbLocal = newUseDbLocalStr
+		}
+	}
+
+	var dbPath string
+	if useDbLocal {
+		dbFile := os.Getenv("DB_FILE")
+		if dbFile == "" {
+			return nil, fmt.Errorf("DB_FILE must be set")
+		}
+		dbPath = dbFile
+	} else {
+		dbURL := os.Getenv("DB_URL")
+		if dbURL == "" {
+			return nil, fmt.Errorf("DB_URL must be set")
+		}
+		dbAuthToken := os.Getenv("DB_AUTH_TOKEN")
+		if dbAuthToken == "" {
+			return nil, fmt.Errorf("DB_AUTH_TOKEN must be set")
+		}
+
+		if !strings.HasPrefix(dbURL, "libsql") {
+			return nil, fmt.Errorf("invalid database URL format")
+		}
 		dbPath = fmt.Sprintf("%s?authToken=%s", dbURL, dbAuthToken)
 	}
 
 	db, err := sql.Open("libsql", dbPath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to open db %s", err)
+		return nil, fmt.Errorf("failed to connect to database: %w", err)
 	}
 
 	dbQueries := database.New(db)
