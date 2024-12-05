@@ -18,6 +18,17 @@ const (
 	LevelFatal
 )
 
+type ansiColor string
+
+const (
+	colorReset  ansiColor = "\x1b[0m"
+	colorRed    ansiColor = "\x1b[91m"
+	colorGreen  ansiColor = "\x1b[92m"
+	colorYellow ansiColor = "\x1b[93m"
+	colorPurple ansiColor = "\x1b[95m"
+	colorGray   ansiColor = "\x1b[38;5;247m"
+)
+
 type Logger interface {
 	Fatalf(string, ...interface{})
 	Errorf(string, ...interface{})
@@ -59,11 +70,7 @@ func NewLogger(prefix string, logLevel string) Logger {
 }
 
 func (l *stdDebugLogger) Fatalf(format string, v ...interface{}) {
-	l.mu.Lock()
-	defer l.mu.Unlock()
-
-	formattedMsg := fmt.Sprintf("%s FATAL: %s", l.loggingPrefix, format)
-	log.Printf(formattedMsg, v...)
+	l.log(LevelFatal, format, v...)
 	os.Exit(1)
 }
 
@@ -92,17 +99,26 @@ func (l *stdDebugLogger) log(level LogLevel, format string, v ...interface{}) {
 	}
 
 	var levelPrefix string
+	var colorCode ansiColor
+
 	switch level {
 	case LevelDebug:
 		levelPrefix = "DEBUG"
+		colorCode = colorGray
 	case LevelInfo:
 		levelPrefix = "INFO"
+		colorCode = colorGreen
 	case LevelWarn:
 		levelPrefix = "WARN"
+		colorCode = colorYellow
 	case LevelError:
 		levelPrefix = "ERROR"
+		colorCode = colorRed
+	case LevelFatal:
+		levelPrefix = "FATAL"
+		colorCode = colorPurple
 	}
 
-	formattedMsg := fmt.Sprintf("%s %s: %s", l.loggingPrefix, levelPrefix, format)
+	formattedMsg := fmt.Sprintf("%s%s %-5s%s: %s", l.loggingPrefix, colorCode, levelPrefix, colorReset, format)
 	log.Printf(formattedMsg, v...)
 }
