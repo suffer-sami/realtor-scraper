@@ -1,7 +1,7 @@
 package main
 
 import (
-	"log"
+	"fmt"
 	"net/url"
 	"strings"
 
@@ -14,9 +14,19 @@ const (
 )
 
 // normalizeAgent normalizes the fields of an Agent struct.
-func normalizeAgent(agent *Agent) {
-	agent.Href = tryNormalizeURL(agent.Href)
-	agent.Office.Website = tryNormalizeURL(agent.Office.Website)
+func (cfg *config) normalizeAgent(agent *Agent) {
+
+	if normalizedAgentHref, err := tryNormalizeURL(agent.Href); err != nil {
+		cfg.logger.Warnf("error while normalizing agent href URL: %v", err)
+	} else {
+		agent.Href = normalizedAgentHref
+	}
+
+	if normalizedOfficeWebsite, err := tryNormalizeURL(agent.Office.Website); err != nil {
+		cfg.logger.Warnf("error while normalizing agent office website URL: %v", err)
+	} else {
+		agent.Office.Website = normalizedOfficeWebsite
+	}
 
 	agent.Email = normalizeEmail(agent.Email)
 	agent.Office.Email = normalizeEmail(agent.Office.Email)
@@ -24,18 +34,34 @@ func normalizeAgent(agent *Agent) {
 	agentCountry := getCountryCode(agent.Address.Country, defaultCountryCode)
 	officeCountry := getCountryCode(agent.Office.Address.Country, agentCountry)
 
-	normalizePhoneList(agent.Phones, agentCountry)
-	normalizePhoneList(agent.Office.Phones, officeCountry)
+	for i := range agent.Phones {
+		if err := normalizePhone(&agent.Phones[i], agentCountry); err != nil {
+			cfg.logger.Warnf("error while normalizing agent phone: %v", err)
+		}
+	}
+
+	for i := range agent.Office.Phones {
+		if err := normalizePhone(&agent.Office.Phones[i], officeCountry); err != nil {
+			cfg.logger.Warnf("error while normalizing agent office phone: %v", err)
+		}
+	}
 
 	for key, phone := range agent.Office.PhoneList {
-		normalizePhone(&phone, officeCountry)
+		if err := normalizePhone(&phone, officeCountry); err != nil {
+			cfg.logger.Warnf("error while normalizing agent office phone: %v", err)
+			continue
+		}
 		agent.Office.PhoneList[key] = phone
 	}
 
 	for k, socialMedia := range agent.SocialMedias {
-		agent.SocialMedias[k] = SocialMedia{
-			Href: tryNormalizeURL(socialMedia.Href),
-			Type: strings.ToLower(socialMedia.Type),
+		if normalizedSocialMediaHref, err := tryNormalizeURL(socialMedia.Href); err != nil {
+			cfg.logger.Warnf("error while normalizing agent social media URL: %v", err)
+		} else {
+			agent.SocialMedias[k] = SocialMedia{
+				Href: normalizedSocialMediaHref,
+				Type: strings.ToLower(socialMedia.Type),
+			}
 		}
 	}
 }
@@ -48,49 +74,41 @@ func normalizeEmail(email string) string {
 	return strings.ToLower(strings.TrimSpace(email))
 }
 
-// normalizePhoneList normalizes all phone numbers in a list.
-func normalizePhoneList(phones []Phone, regionCode string) {
-	for i := range phones {
-		normalizePhone(&phones[i], regionCode)
-	}
-}
-
 // normalizePhone normalizes a phone number to the international format.
-func normalizePhone(phone *Phone, regionCode string) {
+func normalizePhone(phone *Phone, regionCode string) error {
 	phone.IsValid = false
 	if phone.Number == "" {
-		return
+		return nil
 	}
 	parsedNumber, err := phonenumbers.Parse(phone.Number, regionCode)
 	if err != nil {
-		log.Printf("Failed to parse phone number '%s': %v", phone.Number, err)
-		return
+		return fmt.Errorf("failed to parse phone number '%s': %w", phone.Number, err)
 	}
 
 	if phonenumbers.IsValidNumber(parsedNumber) {
 		phone.IsValid = true
 	}
 	phone.Number = phonenumbers.Format(parsedNumber, phonenumbers.INTERNATIONAL)
+	return nil
 }
 
 // tryNormalizeURL attempts to normalize a URL and logs any errors.
-func tryNormalizeURL(rawURL string) string {
+func tryNormalizeURL(rawURL string) (string, error) {
 	if rawURL == "" {
-		return ""
+		return "", nil
 	}
 	normalized, err := normalizeURL(rawURL)
 	if err != nil {
-		log.Printf("Failed to normalize URL '%s': %v", rawURL, err)
-		return rawURL
+		return "", err
 	}
-	return normalized
+	return normalized, nil
 }
 
 // normalizeURL cleans and normalizes a URL string.
 func normalizeURL(rawURL string) (string, error) {
 	parsedURL, err := url.Parse(strings.TrimSpace(strings.ToLower(rawURL)))
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to parse URL '%s': %w", rawURL, err)
 	}
 
 	// Simplify URL if it has duplicate hostnames
@@ -99,7 +117,7 @@ func normalizeURL(rawURL string) (string, error) {
 	if strings.Contains(parsedURL.Path, strings.TrimPrefix(parsedURL.Host, "www.")) || strings.Contains(parsedURL.Path, ".") {
 		parsedPathURL, err := url.Parse(strings.TrimPrefix(parsedURL.Path, "/"))
 		if err != nil {
-			return "", err
+			return "", fmt.Errorf("failed to parse sub-path URL '%s': %w", parsedPathURL, err)
 		}
 		parsedURL.Path = parsedPathURL.Path
 	}
