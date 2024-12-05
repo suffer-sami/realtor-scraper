@@ -119,6 +119,6 @@ func (l *stdDebugLogger) log(level LogLevel, format string, v ...interface{}) {
 		colorCode = colorPurple
 	}
 
-	formattedMsg := fmt.Sprintf("%s%s %-5s%s: %s", l.loggingPrefix, colorCode, levelPrefix, colorReset, format)
+	formattedMsg := fmt.Sprintf("%s%s %5s%s: %s", l.loggingPrefix, colorCode, levelPrefix, colorReset, format)
 	log.Printf(formattedMsg, v...)
 }
