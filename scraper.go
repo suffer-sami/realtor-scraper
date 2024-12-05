@@ -52,7 +52,7 @@ func (cfg *config) processRequest(request Request) {
 		cfg.wg.Done()
 	}()
 
-	cfg.logger.Infof("FETCHING: Agents: offset %d, limit %d", request.offset, request.resultsPerPage)
+	cfg.logger.Infof("FETCHING: Agents (offset %d, limit %d)", request.offset, request.resultsPerPage)
 
 	agents, err := cfg.getAgents(request.offset, request.resultsPerPage)
 	if err != nil {
