@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"regexp"
 	"strconv"
 	"strings"
@@ -117,7 +118,7 @@ func (n *NumericType) UnmarshalJSON(b []byte) error {
 	if digitRegex.MatchString(str) {
 		num, err := strconv.Atoi(str)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to parse int: %w", err)
 		}
 		*n = NumericType(num)
 	} else {

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"os"
 	"time"
 
@@ -12,19 +13,19 @@ func main() {
 
 	cfg, err := configure(args)
 	if err != nil {
-		cfg.logger.Fatalf("error while configuration: %v", err)
+		log.Fatalf("Failed to initialize configuration: %v", err)
 	}
 	defer cfg.db.Close()
 
 	totalResults, err := cfg.getTotalResults()
 	if err != nil {
-		cfg.logger.Fatalf("error getting total results: %v", err)
+		cfg.logger.Fatalf("Failed to retrieve total results: %v", err)
 	}
 	cfg.logger.Infof("Total Agents: %d\n", totalResults)
 
 	allRequests, err := cfg.getRequests(totalResults)
 	if err != nil {
-		cfg.logger.Fatalf("error getting search requests: %v", err)
+		cfg.logger.Fatalf("Failed to retrieve search requests: %v", err)
 	}
 	cfg.addRequests(allRequests)
 
@@ -38,16 +39,12 @@ func main() {
 		count := 0
 
 		for _, reqKey := range remainingReqs {
-			req, err := cfg.getRequest(reqKey)
+			request, err := cfg.getRequest(reqKey)
 			if err != nil {
-				cfg.logger.Fatalf("error getting remaining requests (key: %d): %v", reqKey, err)
+				cfg.logger.Fatalf("Failed to retrieve (request: %d): %v", reqKey, err)
 			}
-			if req.processed {
+			if request.processed {
 				continue
-			}
-			request, err := cfg.getRequest(req.offset)
-			if err != nil {
-				cfg.logger.Fatalf("error: %v", err)
 			}
 
 			cfg.wg.Add(1)
@@ -56,9 +53,9 @@ func main() {
 			count++
 			if count%cfg.throttleRequestLimit == 0 {
 				cfg.logger.Infof(
-					"COOLDOWN: trottling requests For %v after %d requests",
-					defaultThrottleTimeout,
+					"THROTTLING: Request limit of %d reached. Pausing for %v.",
 					cfg.throttleRequestLimit,
+					defaultThrottleTimeout,
 				)
 				cfg.client.CloseIdleConnections()
 				time.Sleep(defaultThrottleTimeout)

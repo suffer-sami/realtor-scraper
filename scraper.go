@@ -52,7 +52,7 @@ func (cfg *config) processRequest(request Request) {
 		cfg.wg.Done()
 	}()
 
-	cfg.logger.Infof("Getting Agents (Offset: %d, ResultsPerPage: %d)...\n", request.offset, request.resultsPerPage)
+	cfg.logger.Infof("FETCHING: Agents: offset %d, limit %d", request.offset, request.resultsPerPage)
 
 	agents, err := cfg.getAgents(request.offset, request.resultsPerPage)
 	if err != nil {
@@ -160,7 +160,7 @@ func (cfg *config) getTotalResults() (int, error) {
 
 	response, err := cfg.getSearchResults(payload)
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("error getting search results: %w", err)
 	}
 
 	return response.MatchingRows, nil
@@ -172,23 +172,21 @@ func (cfg *config) getAgents(offset, resultsPerPage int) ([]Agent, error) {
 
 	response, err := cfg.getSearchResults(payload)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error getting search results: %w", err)
 	}
 
 	for i := range response.Agents {
-		normalizeAgent(&response.Agents[i])
+		cfg.normalizeAgent(&response.Agents[i])
 	}
 
-	err = cfg.executeTransaction(context.Background(), func(ctx context.Context, qtx *database.Queries) error {
+	if err := cfg.executeTransaction(context.Background(), func(ctx context.Context, qtx *database.Queries) error {
 		_, err := qtx.CreateRequest(ctx, database.CreateRequestParams{
 			Offset:         int64(offset),
 			ResultsPerPage: int64(resultsPerPage),
 		})
 		return err
-	})
-
-	if err != nil {
-		return nil, err
+	}); err != nil {
+		return nil, fmt.Errorf("error creating dbRequest: %w", err)
 	}
 
 	return response.Agents, nil
@@ -201,7 +199,7 @@ func (cfg *config) getRequests(totalResults int) ([]Request, error) {
 
 	prevRequests, err := cfg.fetchPreviousRequests()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error fetching previous dbRequest: %w", err)
 	}
 
 	markProcessedRequests(requestMap, prevRequests)

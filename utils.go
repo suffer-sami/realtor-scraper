@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 	"strings"
 	"time"
 
@@ -18,7 +19,7 @@ func stringToNullString(s string) sql.NullString {
 func anyToJsonString(o any) (string, error) {
 	data, err := json.Marshal(o)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to encode json: %w", err)
 	}
 	return string(data), nil
 }
