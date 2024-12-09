@@ -54,14 +54,15 @@ func main() {
 			go cfg.processRequest(request)
 
 			count++
-			if int(cfg.activeRequestCount.Load()) >= cfg.throttleRequestLimit {
+			if count%cfg.throttleRequestLimit == 0 {
+				remaining, _ := cfg.getRemainingRequests()
 				cfg.logger.Infof(
-					"THROTTLING: Request limit of %d reached. Pausing for %v.",
+					"THROTTLING: Remaining Requests: %d. Request limit of %d reached. Pausing for %v.",
+					len(remaining),
 					cfg.throttleRequestLimit,
 					defaultThrottleTimeout,
 				)
 				time.Sleep(defaultThrottleTimeout)
-				cfg.client.CloseIdleConnections()
 			}
 
 			if cfg.platform == "dev" && count >= cfg.throttleRequestLimit {
