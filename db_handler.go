@@ -42,7 +42,10 @@ func (cfg *config) storeAgents(agents []Agent) {
 }
 
 func (cfg *config) storeAgent(agent Agent) error {
-	defer cfg.wg.Done()
+	defer func() {
+		cfg.wg.Done()
+		cfg.agentCount.Add(1)
+	}()
 	return cfg.executeTransaction(context.Background(), func(ctx context.Context, qtx *database.Queries) error {
 		cfg.logger.Infof("Agent: %s", agent.PersonName)
 

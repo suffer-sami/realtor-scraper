@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"time"
@@ -17,11 +18,12 @@ func main() {
 	}
 	defer cfg.db.Close()
 
+	cfg.logger.Infof("FETCHING: Total Results")
 	totalResults, err := cfg.getTotalResults()
 	if err != nil {
 		cfg.logger.Fatalf("Failed to retrieve total results: %v", err)
 	}
-	cfg.logger.Infof("Total Agents: %d\n", totalResults)
+	cfg.logger.Infof("STATS: Total Agents: %d\n", totalResults)
 
 	allRequests, err := cfg.getRequests(totalResults)
 	if err != nil {
@@ -31,13 +33,14 @@ func main() {
 
 	for {
 		remainingReqs, isComplete := cfg.getRemainingRequests()
-		cfg.logger.Infof("STATS: (Total Agents: %d, Remaining Agents: %d)", cfg.getRequestCount(), len(remainingReqs))
+		cfg.logger.Infof(
+			"STATS: (Total Requests: %d, Remaining Requests: %d)", cfg.getRequestCount(), len(remainingReqs))
 		if isComplete {
 			cfg.logger.Infof("========== COMPLETE ==========")
 			return
 		}
-		count := 0
 
+		count := 0
 		for _, reqKey := range remainingReqs {
 			request, err := cfg.getRequest(reqKey)
 			if err != nil {
@@ -51,14 +54,14 @@ func main() {
 			go cfg.processRequest(request)
 
 			count++
-			if count%cfg.throttleRequestLimit == 0 {
+			if int(cfg.activeRequestCount.Load()) >= cfg.throttleRequestLimit {
 				cfg.logger.Infof(
 					"THROTTLING: Request limit of %d reached. Pausing for %v.",
 					cfg.throttleRequestLimit,
 					defaultThrottleTimeout,
 				)
-				cfg.client.CloseIdleConnections()
 				time.Sleep(defaultThrottleTimeout)
+				cfg.client.CloseIdleConnections()
 			}
 
 			if cfg.platform == "dev" && count >= cfg.throttleRequestLimit {
@@ -68,7 +71,14 @@ func main() {
 		}
 		cfg.wg.Wait()
 		if cfg.platform == "dev" {
-			break
+			cfg.logger.Infof("DONE")
+			fmt.Println()
+			fmt.Println("Results: ")
+			fmt.Println("* Threads:", cfg.maxThreadCount)
+			fmt.Println("* Requests:", cfg.throttleRequestLimit)
+			fmt.Println("* Agent Scraped:", cfg.agentCount.Load())
+			fmt.Println()
+			return
 		}
 	}
 }

@@ -47,6 +47,7 @@ func getRequestParams(offset, resultsPerPage int) SearchRequestParams {
 // processRequest processes a given request and store the fetched agents
 func (cfg *config) processRequest(request Request) {
 	cfg.concurrencyControl <- struct{}{}
+	cfg.activeRequestCount.Add(1)
 	defer func() {
 		<-cfg.concurrencyControl
 		cfg.wg.Done()
@@ -59,6 +60,7 @@ func (cfg *config) processRequest(request Request) {
 		cfg.logger.Errorf("error getting request (%d, %d): %v", request.offset, request.resultsPerPage, err)
 		return
 	}
+	cfg.activeRequestCount.CompareAndSwap(cfg.activeRequestCount.Load(), cfg.activeRequestCount.Load()-1)
 
 	cfg.markRequestProcessed(request.offset)
 

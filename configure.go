@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/joho/godotenv"
@@ -38,6 +39,9 @@ type config struct {
 	platform             string
 	jwtSecret            string
 	mu                   *sync.Mutex
+	agentCount           atomic.Int32
+	activeRequestCount   atomic.Int32
+	maxThreadCount       int
 	concurrencyControl   chan struct{}
 	wg                   *sync.WaitGroup
 }
@@ -189,6 +193,7 @@ func configure(args []string) (*config, error) {
 		platform:             platform,
 		jwtSecret:            jwtSecret,
 		mu:                   &sync.Mutex{},
+		maxThreadCount:       maxConcurrency,
 		concurrencyControl:   make(chan struct{}, maxConcurrency),
 		wg:                   &sync.WaitGroup{},
 	}, nil
