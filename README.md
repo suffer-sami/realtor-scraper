@@ -118,12 +118,14 @@ go build
 > [!CAUTION]
 > **Avoid running the scraper without proxies.** If you're not using Docker w/ proxies, consider using any rotating system-level proxies or even a VPN.
 
-![Walkthrough](./assets/demo.gif)
+<img alt="walkthrough" src="./assets/demo.gif" width="600" />
+
 
 <details>
 <summary>Detailed Log</summary>
 
-**Note:** Below is an example of a dummy agent log entry with `LOG_LEVEL=DEBUG`.
+
+Following is an example of a dummy agent log entry with `LOG_LEVEL=DEBUG`.
 
 ```bash
 2024/12/10 00:15:55 realtor-scraper  INFO: FETCHING: Total Results
