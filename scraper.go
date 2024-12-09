@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"math"
+	"math/rand"
 	"net/http"
 	"net/url"
 	"sort"
@@ -18,7 +19,6 @@ import (
 const (
 	baseUrl               = "https://realtor.com"
 	apiEndpoint           = baseUrl + "/realestateagents/api/v3/search"
-	userAgent             = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
 	defaultResultsPerPage = 20
 	tokenTTL              = 1 * time.Minute
 )
@@ -51,6 +51,7 @@ func (cfg *config) processRequest(request Request) {
 	defer func() {
 		<-cfg.concurrencyControl
 		cfg.wg.Done()
+		cfg.activeRequestCount.CompareAndSwap(cfg.activeRequestCount.Load(), cfg.activeRequestCount.Load()-1)
 	}()
 
 	cfg.logger.Infof("FETCHING: Agents (offset %d, limit %d)", request.offset, request.resultsPerPage)
@@ -60,7 +61,6 @@ func (cfg *config) processRequest(request Request) {
 		cfg.logger.Errorf("error getting request (%d, %d): %v", request.offset, request.resultsPerPage, err)
 		return
 	}
-	cfg.activeRequestCount.CompareAndSwap(cfg.activeRequestCount.Load(), cfg.activeRequestCount.Load()-1)
 
 	cfg.markRequestProcessed(request.offset)
 
@@ -142,7 +142,7 @@ func setHeaders(req *http.Request, token string) {
 	req.Header.Set("Cache-Control", "no-cache")
 	req.Header.Set("Pragma", "no-cache")
 	req.Header.Set("Authorization", "Bearer "+token)
-	req.Header.Set("User-Agent", userAgent)
+	req.Header.Set("User-Agent", getRandomUserAgent())
 }
 
 // generateBearerToken creates a signed JWT token.
@@ -154,6 +154,34 @@ func generateBearerToken(secret string) (string, error) {
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString([]byte(secret))
+}
+
+// getRandomUserAgent give random useragent for rotating useragent.
+func getRandomUserAgent() string {
+	userAgents := []string{
+		// Chrome on Windows 10
+		"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+
+		// Chrome on macOS
+		"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+
+		// Chrome on Linux
+		"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+
+		// Chrome on iPhone
+		"Mozilla/5.0 (iPhone; CPU iPhone OS 17_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/132.0.6834.31 Mobile/15E148 Safari/604.1",
+
+		// Chrome on iPad
+		"Mozilla/5.0 (iPad; CPU OS 17_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/132.0.6834.31 Mobile/15E148 Safari/604.1",
+
+		// Chrome on iPod
+		"Mozilla/5.0 (iPod; CPU iPhone OS 17_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/132.0.6834.31 Mobile/15E148 Safari/604.1",
+
+		// Chrome on Android
+		"Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.6778.104 Mobile Safari/537.36",
+	}
+
+	return userAgents[rand.Intn(len(userAgents))]
 }
 
 // getTotalResults retrieves the total number of matching rows.
