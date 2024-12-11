@@ -63,10 +63,11 @@ func (cfg *config) processRequest(request Request) {
 		return
 	}
 
-	// Error nandling
+	// Error handling
 	if err := cfg.markRequestProcessed(request.offset); err != nil {
-		// Print the error with context
-		fmt.Printf("Error processing request with offset %d: %v\n", request.offset, err)
+		// Log the error with context
+		cfg.logger.Errorf("error processing request with offset %d: %v\n", request.offset, err)
+		return
 	}
 
 	cfg.wg.Add(1)
