@@ -102,7 +102,10 @@ func (cfg *config) getRequestCount() int {
 }
 
 func configure(args []string) (*config, error) {
-	godotenv.Load()
+	// Check if godotenv.Load() returns an error and handle it
+	if err := godotenv.Load(); err != nil {
+		return nil, fmt.Errorf("Error loading .env file: %v", err)
+	}
 	maxConcurrency := defaultMaxConcurrency
 	if len(args) > 0 {
 		if newMaxConcurrency, err := strconv.Atoi(args[0]); err == nil {

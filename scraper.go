@@ -2,10 +2,11 @@ package main
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/binary"
 	"fmt"
 	"io"
 	"math"
-	"math/rand"
 	"net/http"
 	"net/url"
 	"sort"
@@ -62,7 +63,11 @@ func (cfg *config) processRequest(request Request) {
 		return
 	}
 
-	cfg.markRequestProcessed(request.offset)
+	// Error nandling
+	if err := cfg.markRequestProcessed(request.offset); err != nil {
+		// Print the error with context
+		fmt.Printf("Error processing request with offset %d: %v\n", request.offset, err)
+	}
 
 	cfg.wg.Add(1)
 	go func() {
@@ -180,8 +185,16 @@ func getRandomUserAgent() string {
 		// Chrome on Android
 		"Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.6778.104 Mobile Safari/537.36",
 	}
+	// Generate a secure random index using crypto/rand
+	var randomIndex uint32
+	err := binary.Read(rand.Reader, binary.LittleEndian, &randomIndex)
+	if err != nil {
+		fmt.Println("Error generating random number:", err)
+		return ""
+	}
 
-	return userAgents[rand.Intn(len(userAgents))]
+	// Use the random index to pick a random user agent
+	return userAgents[int(randomIndex)%len(userAgents)]
 }
 
 // getTotalResults retrieves the total number of matching rows.
