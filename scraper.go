@@ -95,7 +95,14 @@ func (cfg *config) getSearchResults(payload SearchRequestParams) (SearchRequestR
 		return SearchRequestResponse{}, fmt.Errorf("failed to create HTTP request: %w", err)
 	}
 
-	setHeaders(req, token)
+	// getting random agent and handling error
+	userAgent, err := getRandomUserAgent()
+	if err != nil {
+		return SearchRequestResponse{}, fmt.Errorf("failed to get random user agent: %w", err)
+	}
+
+	// set header with generated agent
+	setHeaders(req, token, userAgent)
 
 	resp, err := cfg.client.Do(req)
 	if err != nil {
@@ -141,14 +148,14 @@ func buildQueryParams(payload SearchRequestParams) (url.Values, error) {
 }
 
 // setHeaders sets headers for the HTTP request.
-func setHeaders(req *http.Request, token string) {
+func setHeaders(req *http.Request, token string, userAgent string) {
 	req.Header.Set("Accept", "application/json, text/plain, */*")
 	req.Header.Set("Content-type", "application/json")
 	req.Header.Set("Origin", baseUrl)
 	req.Header.Set("Cache-Control", "no-cache")
 	req.Header.Set("Pragma", "no-cache")
 	req.Header.Set("Authorization", "Bearer "+token)
-	req.Header.Set("User-Agent", getRandomUserAgent())
+	req.Header.Set("User-Agent", userAgent)
 }
 
 // generateBearerToken creates a signed JWT token.
@@ -163,7 +170,7 @@ func generateBearerToken(secret string) (string, error) {
 }
 
 // getRandomUserAgent give random useragent for rotating useragent.
-func getRandomUserAgent() string {
+func getRandomUserAgent() (string, error) {
 	userAgents := []string{
 		// Chrome on Windows 10
 		"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
@@ -190,12 +197,11 @@ func getRandomUserAgent() string {
 	var randomIndex uint32
 	err := binary.Read(rand.Reader, binary.LittleEndian, &randomIndex)
 	if err != nil {
-		fmt.Println("Error generating random number:", err)
-		return ""
+		return "", fmt.Errorf("error generating random number for user-agent:", err)
 	}
 
 	// Use the random index to pick a random user agent
-	return userAgents[int(randomIndex)%len(userAgents)]
+	return userAgents[int(randomIndex)%len(userAgents)], nil
 }
 
 // getTotalResults retrieves the total number of matching rows.
