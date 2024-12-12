@@ -2,10 +2,11 @@ package main
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/binary"
 	"fmt"
 	"io"
 	"math"
-	"math/rand"
 	"net/http"
 	"net/url"
 	"sort"
@@ -62,7 +63,12 @@ func (cfg *config) processRequest(request Request) {
 		return
 	}
 
-	cfg.markRequestProcessed(request.offset)
+	// Error handling
+	if err := cfg.markRequestProcessed(request.offset); err != nil {
+		// Log the error with context
+		cfg.logger.Errorf("error processing request with offset %d: %v\n", request.offset, err)
+		return
+	}
 
 	cfg.wg.Add(1)
 	go func() {
@@ -89,7 +95,14 @@ func (cfg *config) getSearchResults(payload SearchRequestParams) (SearchRequestR
 		return SearchRequestResponse{}, fmt.Errorf("failed to create HTTP request: %w", err)
 	}
 
-	setHeaders(req, token)
+	// getting random agent and handling error
+	userAgent, err := getRandomUserAgent()
+	if err != nil {
+		return SearchRequestResponse{}, fmt.Errorf("failed to get random user agent: %w", err)
+	}
+
+	// set header with generated agent
+	setHeaders(req, token, userAgent)
 
 	resp, err := cfg.client.Do(req)
 	if err != nil {
@@ -135,14 +148,14 @@ func buildQueryParams(payload SearchRequestParams) (url.Values, error) {
 }
 
 // setHeaders sets headers for the HTTP request.
-func setHeaders(req *http.Request, token string) {
+func setHeaders(req *http.Request, token string, userAgent string) {
 	req.Header.Set("Accept", "application/json, text/plain, */*")
 	req.Header.Set("Content-type", "application/json")
 	req.Header.Set("Origin", baseUrl)
 	req.Header.Set("Cache-Control", "no-cache")
 	req.Header.Set("Pragma", "no-cache")
 	req.Header.Set("Authorization", "Bearer "+token)
-	req.Header.Set("User-Agent", getRandomUserAgent())
+	req.Header.Set("User-Agent", userAgent)
 }
 
 // generateBearerToken creates a signed JWT token.
@@ -157,7 +170,7 @@ func generateBearerToken(secret string) (string, error) {
 }
 
 // getRandomUserAgent give random useragent for rotating useragent.
-func getRandomUserAgent() string {
+func getRandomUserAgent() (string, error) {
 	userAgents := []string{
 		// Chrome on Windows 10
 		"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
@@ -180,8 +193,15 @@ func getRandomUserAgent() string {
 		// Chrome on Android
 		"Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.6778.104 Mobile Safari/537.36",
 	}
+	// Generate a secure random index using crypto/rand
+	var randomIndex uint32
+	err := binary.Read(rand.Reader, binary.LittleEndian, &randomIndex)
+	if err != nil {
+		return "", fmt.Errorf("error generating random number for user-agent:", err)
+	}
 
-	return userAgents[rand.Intn(len(userAgents))]
+	// Use the random index to pick a random user agent
+	return userAgents[int(randomIndex)%len(userAgents)], nil
 }
 
 // getTotalResults retrieves the total number of matching rows.
